@@ -175,6 +175,13 @@
             text-transform: uppercase;
         }
 
+        .plan-card-header[aria-expanded="false"] .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        .toggle-icon {
+            transition: transform 0.2s ease;
+        }
+
         @keyframes slideIn {
             from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -338,7 +345,7 @@
                     <div class="p-3 bg-light border-bottom">
                         <small class="text-muted">
                             <i class="bi bi-info-circle me-1"></i>
-                            Menampilkan Plan dari Setter Out yang sudah selesai Candling dan siap ditransfer ke mesin Hatcher.
+                            Menampilkan Plan dari Setter In yang direferensikan.
                         </small>
                     </div>
                     <div class="table-responsive">
@@ -346,10 +353,9 @@
                             <thead>
                                 <tr>
                                     <th class="ps-3" style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Plan No</th>
+                                    <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Kandang</th>
                                     <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Item</th>
                                     <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Mesin Setter</th>
-                                    <th class="text-center" style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Qty Net</th>
-                                    <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Ref. SO</th>
                                     <th style="background:#f8f9fa;"></th>
                                 </tr>
                             </thead>
@@ -407,27 +413,21 @@
         };
 
         // ══════════════════════════════════════════
-        // BUILD AVAILABLE PLAN LIST FROM SETTER OUT
-        // (Membaca semua SO yang refIn = siDocNo)
+        // BUILD AVAILABLE PLAN LIST FROM SETTER IN
+        // (Membaca langsung plan dari Setter In)
         // ══════════════════════════════════════════
         function loadAvailablePlansFromSI(siDocNo) {
             availableSIPlans = [];
-            const soList = JSON.parse(localStorage.getItem('setterOut_list') || '[]');
+            const siData = JSON.parse(localStorage.getItem('setterIn_' + siDocNo));
+            if (!siData) return;
 
-            soList.forEach(soDocNo => {
-                const soData = JSON.parse(localStorage.getItem('setterOut_' + soDocNo));
-                if (!soData || soData.refIn !== siDocNo) return;
-
-                soData.plans.forEach(plan => {
-                    const totalAfkir = (plan.stats || []).reduce((s, st) => s + st.qty, 0);
-                    const qtyNet = plan.qtyTarik - totalAfkir;
-                    availableSIPlans.push({
-                        planNo:  plan.planId || plan.planNo,
-                        item:    plan.itemName || plan.item || '-',
-                        machine: plan.machine,
-                        qtyNet:  qtyNet,
-                        refSO:   soDocNo
-                    });
+            (siData.plans || []).forEach(plan => {
+                availableSIPlans.push({
+                    planNo:  plan.planNo,
+                    kandang: plan.kandang || '-',
+                    item:    plan.item || '-',
+                    machine: plan.machine,
+                    qtyNet:  ''
                 });
             });
         }
@@ -478,6 +478,7 @@
             }
 
             loadAvailablePlansFromSI(siDocNo);
+            
             siModal.hide();
         }
 
@@ -498,26 +499,25 @@
 
             if (filtered.length === 0) {
                 tbody.innerHTML = `
-                    <tr><td colspan="6" class="text-center text-muted py-4">
+                    <tr><td colspan="5" class="text-center text-muted py-4">
                         <i class="bi bi-check-circle-fill text-success me-2"></i>
-                        Semua plan sudah ditambahkan atau belum ada Setter Out yang selesai.
+                        Semua plan sudah ditambahkan atau belum ada Setter In.
                     </td></tr>`;
             } else {
                 filtered.forEach(p => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td class="ps-3 fw-bold font-monospace text-warning">${p.planNo}</td>
+                        <td class="small text-muted">${p.kandang}</td>
                         <td class="small">${p.item}</td>
                         <td><span class="badge bg-secondary">${p.machine}</span></td>
-                        <td class="text-center fw-bold text-success font-monospace">${p.qtyNet}</td>
-                        <td><span class="badge bg-light text-dark border">${p.refSO}</span></td>
                         <td class="pe-3 text-end">
                             <button class="btn btn-sm btn-hi-primary">
                                 <i class="bi bi-plus-lg me-1"></i>Pilih
                             </button>
                         </td>
                     `;
-                    tr.querySelector('button').onclick = () => addPlan(p.planNo, p.item, p.machine, p.qtyNet, p.refSO);
+                    tr.querySelector('button').onclick = () => { addPlan(p.planNo, p.kandang, p.item, p.machine, ''); planModal.hide(); };
                     tbody.appendChild(tr);
                 });
             }
@@ -527,40 +527,53 @@
         // ══════════════════════════════════════════
         // ADD PLAN CARD
         // ══════════════════════════════════════════
-        function addPlan(planNo, item, machine, qtyNet, refSO) {
+        function addPlan(planNo, kandang, item, machine, qtyNet) {
             planIdx++;
             const idx = planIdx;
-            selectedPlans.push({ idx, planNo, item, machine, qtyNet, refSO });
+            selectedPlans.push({ idx, planNo, kandang, item, machine, qtyNet: qtyNet || 0 });
 
             const container = document.getElementById('planList');
             container.insertAdjacentHTML('beforeend', `
             <div class="plan-card" id="card-${idx}">
-                <div class="plan-card-header">
+                <div class="plan-card-header" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#planBody-${idx}">
                     <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-chevron-down text-muted me-1 toggle-icon"></i>
                         <span class="plan-id-badge">PLAN: ${planNo}</span>
+                        <span class="text-muted">|</span>
+                        <span class="small fw-semibold text-muted">${kandang || '-'}</span>
                         <span class="text-muted">|</span>
                         <span class="small fw-semibold text-uppercase text-muted">${item}</span>
                         <span class="badge bg-secondary ms-1">${machine}</span>
-                        <span class="badge bg-light text-dark border ms-1 small">Ref: ${refSO}</span>
+                        <span class="badge bg-info text-dark ms-1"><i class="bi bi-egg-fill me-1"></i><span id="headerQty-${idx}">${qtyNet || '0'}</span></span>
                     </div>
-                    <button id="btnRemove-${idx}" class="btn btn-sm btn-outline-danger border-0 hide-on-view">
+                    <button class="btn btn-sm btn-outline-danger border-0 hide-on-view" onclick="event.stopPropagation(); removePlan(${idx})">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
+                <div class="collapse show" id="planBody-${idx}">
                 <div class="p-4">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-md-3">
-                            <label class="section-label d-block mb-1">Qty Net (Dari Candling)</label>
-                            <input type="number" class="form-control fw-bold bg-readonly font-monospace text-success hatch-qty"
-                                id="qty-${idx}" value="${qtyNet}" readonly>
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label class="section-label d-block mb-1">Plan No</label>
+                            <input type="text" class="form-control fw-bold bg-readonly font-monospace" value="${planNo}" readonly style="font-size:12px">
                         </div>
-                        <div class="col-md-1 text-center hide-on-view">
-                            <i class="bi bi-arrow-right fs-3 text-warning opacity-75"></i>
+                        <div class="col-md-2">
+                            <label class="section-label d-block mb-1">Kandang</label>
+                            <input type="text" class="form-control bg-readonly" value="${kandang || '-'}" readonly style="font-size:12px">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="section-label d-block mb-1">Qty Net</label>
+                            <input type="number" class="form-control fw-bold font-monospace text-success hatch-qty"
+                                id="qty-${idx}" value="${qtyNet || ''}" min="0" placeholder="0" oninput="document.getElementById('headerQty-${idx}').innerText = this.value || '0'; updateSummary()">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="section-label d-block mb-1">Open Qty</label>
+                            <input type="text" class="form-control fw-bold bg-light text-muted font-monospace text-center" value="-" readonly title="Terhitung Otomatis Setelah Save">
                         </div>
                         <div class="col-md-4">
-                            <label class="section-label d-block mb-1">Tujuan Mesin Hatcher</label>
+                            <label class="section-label d-block mb-1">Mesin Hatcher</label>
                             <select class="form-select fw-bold border-warning hatch-machine" id="mcn-${idx}">
-                                <option value="">-- Pilih Mesin --</option>
+                                <option value="">-- Pilih --</option>
                                 <option value="TNS-HAT01">TNS-HAT01</option>
                                 <option value="TNS-HAT02">TNS-HAT02</option>
                                 <option value="TNS-HAT03">TNS-HAT03</option>
@@ -568,16 +581,9 @@
                                 <option value="TNS-HAT05">TNS-HAT05</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <label class="section-label d-block mb-1">No. Keranjang / Posisi</label>
-                            <input type="text" class="form-control hatch-tray" id="tray-${idx}"
-                                placeholder="Contoh: Row A - Level 1">
-                        </div>
                     </div>
                 </div>
             </div>`);
-
-            document.getElementById(`btnRemove-${idx}`).onclick = () => removePlan(idx);
 
             planModal.hide();
             updateSummary();
@@ -614,33 +620,63 @@
             const container = document.getElementById('planList');
             let totalQty = 0;
 
+            const hoList = JSON.parse(localStorage.getItem('hatcherOut_list') || '[]');
+            const consumedQtyMap = {};
+            hoList.forEach(hoId => {
+                const hoData = JSON.parse(localStorage.getItem('hatcherOut_' + hoId));
+                if (hoData && hoData.refHatcherIn === data.docNo) {
+                    (hoData.plans || []).forEach(p => {
+                        const pid = p.planId || p.planNo;
+                        consumedQtyMap[pid] = (consumedQtyMap[pid] || 0) + (p.qtyNet || 0);
+                    });
+                }
+            });
+
             (data.plans || []).forEach(plan => {
+                const consumed = consumedQtyMap[plan.planNo] || 0;
+                const openQty = plan.qtyNet - consumed;
+                const openBadge = openQty > 0 ? `<div class="badge bg-warning text-dark font-monospace mt-1 w-100" style="font-size:10px" title="Sisa Belum Dipanen">Open: ${openQty}</div>` : `<div class="badge bg-secondary mt-1 w-100" style="font-size:10px">PANEN FULL</div>`;
+
                 totalQty += plan.qtyNet;
                 container.insertAdjacentHTML('beforeend', `
                 <div class="plan-card">
-                    <div class="plan-card-header">
+                    <div class="plan-card-header" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#planBodyView-${plan.planNo}">
                         <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-chevron-down text-muted me-1 toggle-icon"></i>
                             <span class="plan-id-badge">PLAN: ${plan.planNo}</span>
+                            <span class="text-muted">|</span>
+                            <span class="small fw-semibold text-muted">${plan.kandang || plan.kandangName || '-'}</span>
                             <span class="text-muted">|</span>
                             <span class="small fw-semibold text-uppercase text-muted">${plan.item || '-'}</span>
                             <span class="badge bg-secondary ms-1">${plan.machine || '-'}</span>
+                            <span class="badge bg-info text-dark ms-1"><i class="bi bi-egg-fill me-1"></i>${plan.qtyNet}</span>
                         </div>
                     </div>
+                    <div class="collapse show" id="planBodyView-${plan.planNo}">
                     <div class="p-4">
                         <div class="row g-3">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
+                                <label class="section-label d-block mb-1">Plan No</label>
+                                <input type="text" class="form-control fw-bold font-monospace bg-light" value="${plan.planNo}" readonly style="font-size:12px">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="section-label d-block mb-1">Kandang</label>
+                                <input type="text" class="form-control bg-light" value="${plan.kandang || plan.kandangName || '-'}" readonly style="font-size:12px">
+                            </div>
+                            <div class="col-md-2">
                                 <label class="section-label d-block mb-1">Qty Net</label>
-                                <input type="number" class="form-control fw-bold font-monospace text-success" value="${plan.qtyNet}" readonly>
+                                <input type="number" class="form-control fw-bold font-monospace text-success bg-light text-center" value="${plan.qtyNet}" readonly title="Qty Masuk Hatcher">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="section-label d-block mb-1">Open Qty</label>
+                                <input type="number" class="form-control fw-bold font-monospace bg-light text-center ${openQty > 0 ? 'text-warning' : 'text-muted'}" value="${openQty}" readonly title="Sisa Belum Dipanen">
                             </div>
                             <div class="col-md-4">
                                 <label class="section-label d-block mb-1">Mesin Hatcher</label>
                                 <input type="text" class="form-control fw-bold border-warning" value="${plan.hatcherMachine || '-'}" readonly>
                             </div>
-                            <div class="col-md-4">
-                                <label class="section-label d-block mb-1">No. Keranjang / Posisi</label>
-                                <input type="text" class="form-control" value="${plan.trayNo || '-'}" readonly>
-                            </div>
                         </div>
+                    </div>
                     </div>
                 </div>`);
             });
@@ -660,11 +696,11 @@
 
             const plans = selectedPlans.map(p => ({
                 planNo:         p.planNo,
+                kandang:        p.kandang,
                 item:           p.item,
                 machine:        p.machine,         // mesin setter asal
                 qtyNet:         parseInt(document.getElementById('qty-' + p.idx).value) || p.qtyNet,
-                hatcherMachine: document.getElementById('mcn-' + p.idx).value,
-                trayNo:         document.getElementById('tray-' + p.idx).value,
+                hatcherMachine: document.getElementById('mcn-' + p.idx).value
             }));
 
             const payload = {

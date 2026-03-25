@@ -245,6 +245,24 @@
                         <small class="text-muted" style="font-size:11px;">*Auto hitung dari Setter Date</small>
                     </div>
                 </div>
+                
+                <hr class="my-4 text-muted opacity-25">
+
+                <!-- Statistic Row -->
+                <div class="row g-3 justify-content-end">
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Total Qty (Masuk)</label>
+                        <input type="number" class="form-control fw-bold bg-readonly text-end" id="hdrTotalQty" value="0" readonly title="Dihitung Otomatis dari Tabel">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1" style="color:#f87171;">Total Qty Unhatched</label>
+                        <input type="number" class="form-control fw-bold bg-readonly text-end text-danger" id="gTotalUnhatched" value="0" readonly title="Dihitung Otomatis dari Afkir & Culling">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1" style="color:#4ade80;">Total Qty Hatched</label>
+                        <input type="number" class="form-control fw-bold bg-readonly text-end text-success" id="gTotalHatched" value="0" readonly title="Dihitung Otomatis dari DOC Hidup">
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -265,21 +283,23 @@
             <div class="table-responsive">
                 <table class="table table-bordered plan-table mb-0 align-middle">
                     <thead>
-                        <tr>
                             <th width="44" class="text-center">#</th>
-                            <th width="18%">Plan No & Asal Kandang</th>
-                            <th width="24%">Item Code HE (Telur)</th>
-                            <th width="14%">Mesin Setter</th>
-                            <th width="11%" class="text-center">Qty (Butir)</th>
-                            <th width="11%" class="text-center">Berat (Kg)</th>
+                            <th width="12%">Plan No</th>
+                            <th width="15%">Asal Kandang</th>
+                            <th width="18%">Item Code HE (Telur)</th>
+                            <th width="12%">Mesin Setter</th>
+                            <th width="10%" class="text-center">Qty Masuk</th>
+                            <th width="10%" class="text-center">Open Qty</th>
+                            <th width="10%" class="text-center">Berat (Kg)</th>
                             <th width="48" class="text-center hide-on-view"></th>
                         </tr>
                     </thead>
                     <tbody id="gridBody"></tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="4" class="text-end section-label py-2 pe-3">Total Keseluruhan</td>
+                            <td colspan="5" class="text-end section-label py-2 pe-3">Total Keseluruhan</td>
                             <td class="text-center fw-bold text-primary font-monospace fs-5" id="totalQty">0</td>
+                            <td class="text-center fw-bold text-warning font-monospace fs-5" id="totalOpenQty">0</td>
                             <td class="text-center fw-bold text-primary font-monospace fs-5" id="totalWeight">0.0</td>
                             <td class="hide-on-view"></td>
                         </tr>
@@ -398,8 +418,11 @@
                 <td class="row-number">${rowCount}</td>
                 <td>
                     <input type="text" class="form-control form-control-sm fw-bold font-monospace plan-no"
-                        placeholder="Cari Plan No..." style="font-size:12px;">
-                    <small class="text-muted" style="font-size:10px;">Contoh: 240000040</small>
+                        placeholder="Plan No..." style="font-size:12px;">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm plan-kandang"
+                        placeholder="Asal Kandang..." style="font-size:12px;">
                 </td>
                 <td>
                     <select class="form-select form-select-sm plan-item">
@@ -424,6 +447,10 @@
                         value="0" min="0" oninput="calculateTotals()">
                 </td>
                 <td>
+                    <input type="text" class="form-control form-control-sm text-center fw-bold bg-light font-monospace text-muted"
+                        value="-" readonly title="Terhitung Otomatis Setelah Save">
+                </td>
+                <td>
                     <input type="number" class="form-control form-control-sm text-center calc-weight"
                         value="0.0" step="0.1" min="0" oninput="calculateTotals()">
                 </td>
@@ -446,16 +473,19 @@
         // TOTALS
         // ══════════════════════════════════════════
         function calculateTotals() {
-            let totalQty = 0, totalWeight = 0;
+            let totalQty = 0, totalWeight = 0, totalOpen = 0;
             document.querySelectorAll('.calc-qty').forEach(el => totalQty += parseInt(el.value) || 0);
             document.querySelectorAll('.calc-weight').forEach(el => totalWeight += parseFloat(el.value) || 0);
+            document.querySelectorAll('.calc-open').forEach(el => totalOpen += parseInt(el.value) || 0);
 
             const planCount = document.querySelectorAll('#gridBody tr').length;
 
             document.getElementById('totalQty').innerText    = totalQty.toLocaleString();
+            if(document.getElementById('totalOpenQty')) document.getElementById('totalOpenQty').innerText = totalOpen.toLocaleString();
             document.getElementById('totalWeight').innerText = totalWeight.toFixed(1);
             document.getElementById('gTotalPlan').innerText  = planCount;
             document.getElementById('gTotalQty').innerText   = totalQty.toLocaleString();
+            if(document.getElementById('hdrTotalQty')) document.getElementById('hdrTotalQty').value = totalQty;
             document.getElementById('gTotalWeight').innerText = totalWeight.toFixed(1);
         }
 
@@ -471,19 +501,89 @@
             document.getElementById('dueDate').value     = data.dueDate || '';
             document.getElementById('inputRemarks').value = data.remarks || '';
 
+            const soList = JSON.parse(localStorage.getItem('setterOut_list') || '[]');
+            const consumedQtyMap = {};
+            let setterOutAfkir = 0;
+
+            soList.forEach(soId => {
+                const soData = JSON.parse(localStorage.getItem('setterOut_' + soId));
+                if (soData && soData.refIn === data.docNo) {
+                    (soData.plans || []).forEach(p => {
+                        const pid = p.planId || p.planNo;
+                        consumedQtyMap[pid] = (consumedQtyMap[pid] || 0) + (p.qtyTarik || 0);
+
+                        (p.stats || []).forEach(s => {
+                            setterOutAfkir += parseInt(s.qty) || 0;
+                        });
+                    });
+                }
+            });
+
+            const hoList = JSON.parse(localStorage.getItem('hatcherOut_list') || '[]');
+            let docHidup = 0;
+            let cullingAfkirHO = 0;
+
+            // Karena Hatcher Out mencari Ref In yg menuju Hatcher In,
+            // Hatcher In punya refIn menuju Setter In.
+            // Kita harus cari Hatcher In yang terkait Setter In ini dulu
+            const hiList = JSON.parse(localStorage.getItem('hatcherIn_list') || '[]');
+            const linkedHIs = [];
+            hiList.forEach(hiId => {
+                const hiData = JSON.parse(localStorage.getItem('hatcherIn_' + hiId));
+                if(hiData && hiData.refIn === data.docNo) linkedHIs.push(hiData.docNo);
+            });
+
+            hoList.forEach(hoId => {
+                const hoData = JSON.parse(localStorage.getItem('hatcherOut_' + hoId));
+                if(hoData && linkedHIs.includes(hoData.refHatcherIn)) {
+                    (hoData.plans || []).forEach(p => {
+                        (p.cullings || []).forEach(c => {
+                            if(c.code === 'DOC_HIDUP') {
+                                docHidup += parseInt(c.qty) || 0;
+                            } else {
+                                cullingAfkirHO += parseInt(c.qty) || 0;
+                            }
+                        });
+                        
+                        // Fallback jika pakai format qtyDoc lama
+                        if(p.qtyDoc) {
+                           // kalau belum ada di array cullings
+                           if(!p.cullings || !p.cullings.find(x => x.code === 'DOC_HIDUP')){
+                                docHidup += parseInt(p.qtyDoc) || 0;
+                           }
+                        }
+                    });
+                }
+            });
+
+            document.getElementById('gTotalHatched').value = docHidup;
+            document.getElementById('gTotalUnhatched').value = setterOutAfkir + cullingAfkirHO;
+
+
             const tbody = document.getElementById('gridBody');
             (data.plans || []).forEach((plan, idx) => {
+                const consumed = consumedQtyMap[plan.planNo] || 0;
+                const openQty = plan.qty - consumed;
+                
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="row-number">${idx + 1}</td>
                     <td><input type="text" class="form-control form-control-sm fw-bold font-monospace"
                         value="${plan.planNo || ''}" readonly></td>
                     <td><input type="text" class="form-control form-control-sm"
+                        value="${plan.kandang || ''}" readonly></td>
+                    <td><input type="text" class="form-control form-control-sm"
                         value="${plan.item || ''}" readonly></td>
                     <td><input type="text" class="form-control form-control-sm text-center"
                         value="${plan.machine || ''}" readonly></td>
-                    <td><input type="number" class="form-control form-control-sm text-center fw-bold text-primary calc-qty font-monospace"
-                        value="${plan.qty || 0}" readonly></td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm text-center fw-bold text-primary calc-qty font-monospace"
+                            value="${plan.qty || 0}" readonly title="Qty Masuk">
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm text-center fw-bold font-monospace calc-open ${openQty > 0 ? 'text-warning bg-light' : 'text-muted bg-light'}" 
+                            value="${openQty}" readonly title="Sisa Belum Ditarik">
+                    </td>
                     <td><input type="number" class="form-control form-control-sm text-center calc-weight"
                         value="${plan.weight || 0}" readonly></td>
                     <td class="hide-on-view"></td>
@@ -502,14 +602,16 @@
             rows.forEach(row => {
                 const planNo = row.querySelector('.plan-no')?.value?.trim()
                             || row.querySelectorAll('input[readonly]')[0]?.value?.trim();
+                const kandang= row.querySelector('.plan-kandang')?.value?.trim()
+                            || row.querySelectorAll('input[readonly]')[1]?.value?.trim();
                 const item   = row.querySelector('.plan-item')?.value
-                            || row.querySelectorAll('input[readonly]')[1]?.value;
+                            || row.querySelectorAll('input[readonly]')[2]?.value;
                 const machine = row.querySelector('.plan-machine')?.value
-                             || row.querySelectorAll('input[readonly]')[2]?.value;
+                             || row.querySelectorAll('input[readonly]')[3]?.value;
                 const qty    = parseInt(row.querySelector('.calc-qty')?.value) || 0;
                 const weight = parseFloat(row.querySelector('.calc-weight')?.value) || 0;
 
-                if (planNo) plans.push({ planNo, item, machine, qty, weight });
+                if (planNo) plans.push({ planNo, kandang, item, machine, qty, weight });
             });
 
             return {

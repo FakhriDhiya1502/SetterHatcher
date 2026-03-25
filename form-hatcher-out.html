@@ -239,6 +239,13 @@
             animation: slideIn 0.25s ease;
         }
 
+        .plan-card-header[aria-expanded="false"] .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        .toggle-icon {
+            transition: transform 0.2s ease;
+        }
+
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -300,12 +307,12 @@
 
             <div class="p-4">
                 <div class="row g-3">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="section-label d-block mb-1">No. Hatcher Out</label>
                         <input type="text" class="form-control fw-bold bg-readonly font-monospace" id="inputDocNo"
                             value="Auto Generated" readonly>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="section-label d-block mb-1">Ref. Hatcher In</label>
                         <div class="input-group">
                             <input type="text" class="form-control bg-readonly font-monospace" id="refHatcherIn"
@@ -316,9 +323,13 @@
                             </button>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="section-label d-block mb-1">Tanggal Panen</label>
                         <input type="date" class="form-control" id="inputDate" value="2026-03-25">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="section-label d-block mb-1">Waktu</label>
+                        <input type="time" class="form-control" id="inputTime" value="07:00">
                     </div>
                     <div class="col-md-3">
                         <label class="section-label d-block mb-1">Warehouse Tujuan DOC</label>
@@ -327,6 +338,14 @@
                             <option value="TNS-DOC" selected>TNS-DOC (Gudang DOC Tunas)</option>
                             <option value="SWH-DOC">SWH-DOC (Gudang DOC Sawah)</option>
                         </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="section-label d-block mb-1">Temp (C)</label>
+                        <input type="number" class="form-control" id="inputTemp" value="37.20" step="0.01">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="section-label d-block mb-1">Humid (%)</label>
+                        <input type="number" class="form-control" id="inputHumid" value="70.00" step="0.01">
                     </div>
                 </div>
             </div>
@@ -444,6 +463,8 @@
                                         style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">
                                         Plan No</th>
                                     <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">
+                                        Kandang</th>
+                                    <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">
                                         Item</th>
                                     <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">
                                         Mesin Hatcher</th>
@@ -473,14 +494,15 @@
         let availableHatcherInPlans = [];
         let completedHTIDocs = []; 
 
-        // Master jenis culling
+        // Master jenis statistik panen
         const cullingMaster = [
+            { code: "DOC_HIDUP", label: "DOC Hidup / DOD Bagus (Ekor)" },
             { code: "ST0165", label: "Culling — DOD Kering" },
             { code: "ST0166", label: "Culling — DOD Cacat" },
             { code: "ST0174", label: "Telur Tidak Menetas" },
             { code: "ST0175", label: "DOD Mati Saat Panen" },
+            { code: "ST0176", label: "Culling — DOD Basah" }
         ];
-
         let selectedPlans = [];
         let planIdx = 0;
         let cullingRowCount = {};
@@ -510,7 +532,7 @@
             } else {
                 loadDraft();
                 if (refHI) {
-                    selectHatcherInDoc(refHI);
+                    selectHatcherInDoc(refHI, true);
                 }
             }
         };
@@ -544,24 +566,33 @@
             docModal.show();
         }
 
-        function selectHatcherInDoc(docNo) {
+        function selectHatcherInDoc(docNo, isAutoLoad = false) {
             const data = JSON.parse(localStorage.getItem('hatcherIn_' + docNo));
+            if (!data) return;
             document.getElementById('refHatcherIn').value = docNo;
             document.getElementById('lblDocNo').innerText = "HTO" + docNo.substring(3);
             
             // Set available plans from this doc
-            availableHatcherInPlans = data.plans;
-            docModal.hide();
+            availableHatcherInPlans = data.plans || [];
+            if (docModal) docModal.hide();
             
-            // Auto add all plans from the doc as default? 
-            // Or just reset the current selected plans?
             if (selectedPlans.length > 0) {
+                if (isAutoLoad) return;
                 if (confirm('Ubah Referensi? Baris plan yang ada saat ini akan dihapus.')) {
                     document.getElementById('planList').innerHTML = '';
                     selectedPlans = [];
+                    planIdx = 0;
+                    cullingRowCount = {};
                     calculateGrandTotal();
+                } else {
+                    return;
                 }
             }
+            
+            availableHatcherInPlans.forEach(p => {
+                const pkandang = p.kandang || p.kandangName || '-';
+                addPlanFromModal(p.planNo, pkandang, p.item, p.machine, p.qtyNet);
+            });
         }
 
         function openPlanModal() {
@@ -579,7 +610,7 @@
 
                 if (filtered.length === 0) {
                     tbody.innerHTML = `
-                        <tr><td colspan="5" class="text-center text-muted py-4">
+                        <tr><td colspan="6" class="text-center text-muted py-4">
                             <i class="bi bi-check-circle-fill text-success me-2"></i>Semua plan sudah ditambahkan.
                         </td></tr>`;
                 } else {
@@ -587,12 +618,13 @@
                         tbody.innerHTML += `
                         <tr>
                             <td class="ps-3 fw-bold font-monospace text-danger">${p.planNo}</td>
+                            <td class="small text-muted">${p.kandang || '-'}</td>
                             <td class="small">${p.item}</td>
                             <td><span class="badge bg-secondary">${p.machine}</span></td>
                             <td class="text-center fw-bold text-primary">${p.qtyNet}</td>
                             <td class="pe-3">
                                 <button class="btn btn-sm btn-ho-primary"
-                                    onclick="addPlanFromModal('${p.planNo}', '${p.item}', '${p.machine}', ${p.qtyNet})">
+                                    onclick="addPlanFromModal('${p.planNo}', '${p.kandang || '-'}', '${p.item}', '${p.machine}', ${p.qtyNet})">
                                     <i class="bi bi-plus-lg me-1"></i>Pilih
                                 </button>
                             </td>
@@ -607,16 +639,16 @@
         // TAMBAH PLAN
         // ══════════════════════════════════════════
 
-        function addPlanFromModal(planNo, item, machine, qtyNet) {
+        function addPlanFromModal(planNo, kandang, item, machine, qtyNet) {
             planIdx++;
-            selectedPlans.push({ planNo, item, machine, qtyNet, idx: planIdx });
-            renderPlanCard({ planNo, item, machine, qtyNet, idx: planIdx, cullings: [], qtyDoc: 0 });
+            selectedPlans.push({ planNo, kandang, item, machine, qtyNet, idx: planIdx });
+            renderPlanCard({ planNo, kandang, item, machine, qtyNet, idx: planIdx, cullings: [] });
             planModal.hide();
             calculateGrandTotal();
         }
 
         function renderPlanCard(data) {
-            const { planNo, item, machine, qtyNet, idx, cullings, qtyDoc } = data;
+            const { planNo, kandang, item, machine, qtyNet, idx, cullings } = data;
 
             let cullingRowsHtml = '';
             if (cullings && cullings.length > 0) {
@@ -624,22 +656,30 @@
                     cullingRowsHtml += buildCullingRow(idx, ci + 1, c.code, c.qty);
                 });
                 cullingRowCount[idx] = cullings.length;
+            } else {
+                // Auto-tambah baris DOC HIDUP jika plan baru
+                cullingRowsHtml += buildCullingRow(idx, 1, 'DOC_HIDUP', '');
+                cullingRowCount[idx] = 1;
             }
 
             const html = `
             <div class="plan-card" id="pc-${idx}">
-                <div class="plan-card-header">
+                <div class="plan-card-header" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#planBody-${idx}">
                     <div>
+                        <i class="bi bi-chevron-down text-muted me-1 toggle-icon"></i>
                         <span class="plan-id-badge">PLAN: ${planNo}</span>
+                        <span class="ms-2 small fw-semibold text-muted font-monospace">${kandang || '-'}</span>
                         <span class="ms-2 badge bg-light text-dark border">${item}</span>
                         <span class="ms-1 badge bg-secondary">${machine}</span>
+                        <span class="ms-1 badge bg-info text-dark"><i class="bi bi-egg-fill me-1"></i>${qtyNet}</span>
                     </div>
                     <button class="btn btn-sm btn-outline-danger border-0 hide-on-view"
-                            onclick="removePlanCard(${idx}, '${planNo}')">
+                            onclick="event.stopPropagation(); removePlanCard(${idx}, '${planNo}')">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
 
+                <div class="collapse show" id="planBody-${idx}">
                 <div class="p-3">
                     <!-- Metrics -->
                     <div class="row g-2 mb-3">
@@ -670,40 +710,31 @@
                     </div>
 
                     <!-- Input Fields -->
-                    <div class="row g-3 align-items-center mb-3">
-                        <div class="col-md-4">
-                            <label class="section-label d-block mb-1">Jumlah DOC Hidup (Ekor)</label>
-                            <input type="number" class="form-control fw-bold text-success"
-                                   id="docQty-${idx}" data-idx="${idx}" data-qtynet="${qtyNet}"
-                                   value="${qtyDoc}" min="0" max="${qtyNet}"
-                                   oninput="updatePlanMetrics(${idx})" placeholder="0">
+                    <div class="row g-3 align-items-end mb-3">
+                        <div class="col-md-3">
+                            <label class="section-label d-block mb-1">Plan No</label>
+                            <input type="text" class="form-control fw-bold bg-readonly font-monospace" value="${planNo}" readonly style="font-size:12px">
                         </div>
-                        <div class="col-md-4">
-                            <label class="section-label d-block mb-1">No. Nampan / Tray Panen</label>
-                            <input type="text" class="form-control" id="trayNo-${idx}"
-                                   placeholder="Contoh: TRAY-A1, A2">
+                        <div class="col-md-3">
+                            <label class="section-label d-block mb-1">Kandang</label>
+                            <input type="text" class="form-control bg-readonly" value="${kandang || '-'}" readonly style="font-size:12px">
                         </div>
-                        <div class="col-md-4">
-                            <label class="section-label d-block mb-1">Waktu Panen</label>
-                            <input type="time" class="form-control" id="harvestTime-${idx}" value="07:00">
+                        <div class="col-md-6 text-end">
+                            <button class="btn btn-sm btn-outline-primary hide-on-view"
+                                    style="font-size:12px;" onclick="addCullingRow(${idx})">
+                                <i class="bi bi-plus-lg me-1"></i>Tambah Statistik Panen
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Culling Table -->
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="section-label">Rincian Culling & Afkir</span>
-                        <button class="btn btn-sm btn-outline-danger hide-on-view"
-                                style="font-size:12px;" onclick="addCullingRow(${idx})">
-                            <i class="bi bi-plus-lg me-1"></i>Tambah
-                        </button>
-                    </div>
-
+                    <!-- Statistics Table -->
+                    <div class="section-label mb-2">Rincian Statistik Panen (DOC & Lainnya)</div>
                     <div class="table-responsive">
-                        <table class="table table-sm table-bordered culling-table mb-0" id="cullingTable-${idx}">
+                        <table class="table table-sm table-bordered culling-table mb-0" id="cullingTable-${idx}" data-qtynet="${qtyNet}">
                             <thead>
                                 <tr>
                                     <th width="5%" class="text-center">#</th>
-                                    <th width="60%">Jenis Afkir / Culling</th>
+                                    <th width="60%">Jenis Statistik Panen</th>
                                     <th width="20%" class="text-center">Qty</th>
                                     <th width="15%" class="text-center hide-on-view">Aksi</th>
                                 </tr>
@@ -712,14 +743,14 @@
                                 ${cullingRowsHtml || `
                                 <tr id="emptyRow-${idx}">
                                     <td colspan="4" class="text-center text-muted py-3" style="font-size:12px;">
-                                        <i class="bi bi-plus-circle me-1"></i>Belum ada data culling
+                                        <i class="bi bi-plus-circle me-1"></i>Belum ada statistik yang diinput
                                     </td>
                                 </tr>`}
                             </tbody>
                             <tfoot>
                                 <tr class="bg-light">
-                                    <td colspan="2" class="text-end fw-bold small">Total Culling + Tidak Menetas:</td>
-                                    <td class="text-center fw-bold text-danger" id="cullingTotal-${idx}">0</td>
+                                    <td colspan="2" class="text-end fw-bold small">Subtotal Input:</td>
+                                    <td class="text-center fw-bold" id="cullingTotal-${idx}">0</td>
                                     <td class="hide-on-view"></td>
                                 </tr>
                             </tfoot>
@@ -741,6 +772,7 @@
                 <!-- Progress bar visual -->
                 <div class="progress" style="height: 4px; border-radius: 0;">
                     <div class="progress-bar bg-success" id="pb-${idx}" role="progressbar" style="width: 0%"></div>
+                </div>
                 </div>
             </div>`;
 
@@ -817,22 +849,36 @@
         // ══════════════════════════════════════════
 
         function updatePlanMetrics(idx) {
-            const qtyNet = parseInt(document.getElementById(`mi-${idx}`)?.innerText) || 0;
-            const qtyDoc = parseInt(document.getElementById(`docQty-${idx}`)?.value) || 0;
+            const table = document.getElementById(`cullingTable-${idx}`);
+            if(!table) return;
+            const qtyNet = parseInt(table.dataset.qtynet) || 0;
 
-            let totalCulling = 0;
-            document.querySelectorAll(`#cullingBody-${idx} .culling-qty`).forEach(el => {
-                totalCulling += parseInt(el.value) || 0;
+            let sumDoc = 0;
+            let sumCulling = 0;
+
+            document.querySelectorAll(`#cullingBody-${idx} tr`).forEach(row => {
+                const qtyInput = row.querySelector('.culling-qty');
+                const sel = row.querySelector('.culling-select');
+                if (qtyInput && sel) {
+                    const val = parseInt(qtyInput.value) || 0;
+                    if (sel.value === 'DOC_HIDUP') sumDoc += val;
+                    else if (sel.value !== '') sumCulling += val;
+                }
             });
 
-            const hr = qtyNet > 0 ? ((qtyDoc / qtyNet) * 100).toFixed(1) : 0;
+            const subtotal = sumDoc + sumCulling;
+            const hr = qtyNet > 0 ? ((sumDoc / qtyNet) * 100).toFixed(1) : 0;
 
-            document.getElementById(`mdoc-${idx}`).innerText = qtyDoc;
-            document.getElementById(`mculling-${idx}`).innerText = totalCulling;
-            document.getElementById(`cullingTotal-${idx}`).innerText = totalCulling;
-            document.getElementById(`mhr-${idx}`).innerText = hr + '%';
-            document.getElementById(`sumDoc-${idx}`).innerText = qtyDoc;
-            document.getElementById(`sumCulling-${idx}`).innerText = totalCulling;
+            const mdoc = document.getElementById(`mdoc-${idx}`);
+            if(mdoc) mdoc.innerText = sumDoc;
+            const mcull = document.getElementById(`mculling-${idx}`);
+            if(mcull) mcull.innerText = sumCulling;
+
+            document.getElementById(`cullingTotal-${idx}`).innerText = subtotal;
+            const mhr = document.getElementById(`mhr-${idx}`);
+            if(mhr) mhr.innerText = hr + '%';
+            document.getElementById(`sumDoc-${idx}`).innerText = sumDoc;
+            document.getElementById(`sumCulling-${idx}`).innerText = sumCulling;
             document.getElementById(`sumHR-${idx}`).innerText = hr + '%';
             
             const pb = document.getElementById(`pb-${idx}`);
@@ -872,23 +918,23 @@
         function getDraftPayload() {
             const plans = [];
             selectedPlans.forEach(p => {
-                const qtyDoc = parseInt(document.getElementById(`docQty-${p.idx}`)?.value) || 0;
-                const trayNo = document.getElementById(`trayNo-${p.idx}`)?.value || '';
-                const harvestTime = document.getElementById(`harvestTime-${p.idx}`)?.value || '';
                 const cullings = [];
 
                 document.querySelectorAll(`#cullingBody-${p.idx} tr`).forEach(row => {
                     const sel = row.querySelector('.culling-select');
                     const qty = row.querySelector('.culling-qty');
-                    if (sel && qty) cullings.push({ code: sel.value, qty: parseInt(qty.value) || 0 });
+                    if (sel && qty && sel.value !== '') cullings.push({ code: sel.value, qty: parseInt(qty.value) || 0 });
                 });
 
-                plans.push({ ...p, qtyDoc, trayNo, harvestTime, cullings });
+                plans.push({ ...p, cullings });
             });
 
             return {
                 refHatcherIn: document.getElementById('refHatcherIn').value,
                 date: document.getElementById('inputDate').value,
+                time: document.getElementById('inputTime') ? document.getElementById('inputTime').value : '07:00',
+                temp: document.getElementById('inputTemp') ? document.getElementById('inputTemp').value : '37.20',
+                humid: document.getElementById('inputHumid') ? document.getElementById('inputHumid').value : '70.00',
                 whs: document.getElementById('selectWhs').value,
                 remarks: document.getElementById('inputRemarks').value,
                 plans
@@ -902,20 +948,27 @@
                 const draft = JSON.parse(raw);
                 document.getElementById('refHatcherIn').value = draft.refHatcherIn || '';
                 document.getElementById('inputDate').value = draft.date || '';
+                const hTime = document.getElementById('inputTime');
+                if(hTime) hTime.value = draft.time || '07:00';
+                if(document.getElementById('inputTemp')) document.getElementById('inputTemp').value = draft.temp || '37.20';
+                if(document.getElementById('inputHumid')) document.getElementById('inputHumid').value = draft.humid || '70.00';
                 document.getElementById('selectWhs').value = draft.whs || '';
                 document.getElementById('inputRemarks').value = draft.remarks || '';
 
                 draft.plans.forEach(p => {
                     planIdx = Math.max(planIdx, p.idx);
-                    selectedPlans.push({ planNo: p.planNo, item: p.item, machine: p.machine, qtyNet: p.qtyNet, idx: p.idx });
+                    
+                    // Backward compatibility: Convert qtyDoc to DOC_HIDUP culling
+                    if (p.qtyDoc !== undefined && p.qtyDoc !== null) {
+                        if (!p.cullings) p.cullings = [];
+                        if (!p.cullings.find(c => c.code === 'DOC_HIDUP')) {
+                            p.cullings.unshift({ code: 'DOC_HIDUP', qty: p.qtyDoc });
+                        }
+                    }
+
+                    selectedPlans.push({ planNo: p.planNo, kandang: p.kandang, item: p.item, machine: p.machine, qtyNet: p.qtyNet, idx: p.idx });
                     renderPlanCard(p);
                     setTimeout(() => {
-                        if (document.getElementById(`trayNo-${p.idx}`))
-                            document.getElementById(`trayNo-${p.idx}`).value = p.trayNo || '';
-                        if (document.getElementById(`harvestTime-${p.idx}`))
-                            document.getElementById(`harvestTime-${p.idx}`).value = p.harvestTime || '';
-                        if (document.getElementById(`docQty-${p.idx}`))
-                            document.getElementById(`docQty-${p.idx}`).value = p.qtyDoc || 0;
                         updatePlanMetrics(p.idx);
                     }, 60);
                 });
@@ -945,19 +998,19 @@
                     remarks: 'Cuaca cerah. Mesin berjalan normal. Panen selesai pukul 09.00.',
                     plans: [
                         {
-                            planNo: '240000040', item: 'TELUR BEBEK LOKAL AAC',
+                            planNo: '240000040', kandang: 'KDG-01', item: 'TELUR BEBEK LOKAL AAC',
                             machine: 'TNS-HAT05', qtyNet: 185, idx: 1,
-                            qtyDoc: 162, trayNo: 'TRAY-A1', harvestTime: '07:30',
                             cullings: [
+                                { code: 'DOC_HIDUP', qty: 162 },
                                 { code: 'ST0165', qty: 8 },
                                 { code: 'ST0174', qty: 15 }
                             ]
                         },
                         {
-                            planNo: '240000166', item: 'TELUR BEBEK PEKING SUPER',
+                            planNo: '240000166', kandang: 'KDG-02', item: 'TELUR BEBEK PEKING SUPER',
                             machine: 'TNS-HAT05', qtyNet: 193, idx: 2,
-                            qtyDoc: 170, trayNo: 'TRAY-B1', harvestTime: '08:00',
                             cullings: [
+                                { code: 'DOC_HIDUP', qty: 170 },
                                 { code: 'ST0166', qty: 10 },
                                 { code: 'ST0174', qty: 13 }
                             ]
@@ -970,17 +1023,32 @@
             document.getElementById('inputDocNo').value = data.docNo || docNo || 'HTO26-009';
             document.getElementById('refHatcherIn').value = data.refHatcherIn || '';
             document.getElementById('inputDate').value = data.date || '';
+            const hTimeView = document.getElementById('inputTime');
+            if(hTimeView) hTimeView.value = data.time || '07:00';
+            if(document.getElementById('inputTemp')) {
+                document.getElementById('inputTemp').value = data.temp || '37.20';
+                document.getElementById('inputTemp').setAttribute('readonly', 'readonly');
+            }
+            if(document.getElementById('inputHumid')) {
+                document.getElementById('inputHumid').value = data.humid || '70.00';
+                document.getElementById('inputHumid').setAttribute('readonly', 'readonly');
+            }
             document.getElementById('selectWhs').value = data.whs || '';
             document.getElementById('inputRemarks').value = data.remarks || '';
 
             data.plans.forEach(p => {
                 planIdx = Math.max(planIdx, p.idx);
+                
+                // Backward compatibility: Convert qtyDoc to DOC_HIDUP culling
+                if (p.qtyDoc !== undefined && p.qtyDoc !== null) {
+                    if (!p.cullings) p.cullings = [];
+                    if (!p.cullings.find(c => c.code === 'DOC_HIDUP')) {
+                        p.cullings.unshift({ code: 'DOC_HIDUP', qty: p.qtyDoc });
+                    }
+                }
+
                 renderPlanCard(p);
                 setTimeout(() => {
-                    ['trayNo', 'harvestTime', 'docQty'].forEach(field => {
-                        const el = document.getElementById(`${field === 'docQty' ? 'docQty' : field}-${p.idx}`);
-                        if (el) el.value = field === 'docQty' ? (p.qtyDoc || 0) : (p[field] || '');
-                    });
                     updatePlanMetrics(p.idx);
                 }, 60);
             });
