@@ -32,16 +32,29 @@
             height: calc(100vh - 65px);
             padding: 1.5rem;
             gap: 1.5rem;
+            /* Scroll smooth untuk UX */
+            scroll-behavior: smooth;
         }
 
         .phase-column {
-            flex: 0 0 350px;
+            /* Responsif: Di layar kecil ngikut 50vw biar muat 2, max 380px, minimal 300px */
+            flex: 0 0 calc(50vw - 2.25rem);
+            min-width: 300px;
+            max-width: 380px;
             display: flex;
             flex-direction: column;
             background: #f8f9fa;
             border-radius: 12px;
             border: 1px solid #ced4da;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        /* Khusus layar besar PC, ukuran fix */
+        @media (min-width: 1400px) {
+            .phase-column {
+                flex: 0 0 340px;
+            }
         }
 
         .phase-header {
@@ -50,26 +63,87 @@
             font-weight: 600;
             display: flex;
             justify-content: space-between;
+            align-items: center;
             border-radius: 12px 12px 0 0;
+            transition: all 0.3s ease;
         }
 
-        .bg-si {
-            background-color: #0dcaf0;
-            color: #000;
+        .phase-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
         }
 
-        .bg-so {
-            background-color: #20c997;
+        .bg-si { background-color: #0dcaf0; color: #000; }
+        .bg-so { background-color: #20c997; }
+        .bg-hi { background-color: #fd7e14; }
+        .bg-ho { background-color: #dc3545; }
+
+        .btn-collapse {
+            background: transparent;
+            border: none;
+            color: inherit;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.7;
+            transition: 0.2s;
+            font-size: 1.1rem;
         }
 
-        .bg-hi {
-            background-color: #fd7e14;
+        .btn-collapse:hover {
+            opacity: 1;
+            transform: scale(1.1);
         }
 
-        .bg-ho {
-            background-color: #dc3545;
+        /* ======= COLLAPSED STATE ======= */
+        .phase-column.collapsed {
+            flex: 0 0 60px;
+            min-width: 60px;
+            max-width: 60px;
         }
 
+        .phase-column.collapsed .phase-body,
+        .phase-column.collapsed .empty-state {
+            display: none !important;
+        }
+
+        .phase-column.collapsed .phase-header {
+            height: 100%;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .phase-column.collapsed .phase-title {
+            flex-direction: column;
+        }
+
+        .phase-column.collapsed .phase-title .title-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            margin-top: 15px;
+            letter-spacing: 2px;
+            font-size: 12px;
+        }
+
+        .phase-column.collapsed .header-actions {
+            flex-direction: column;
+            margin-top: 15px;
+        }
+
+        .phase-column.collapsed .header-actions .badge {
+            display: none !important;
+        }
+
+        .phase-column.collapsed .btn-collapse {
+            transform: rotate(-90deg);
+        }
+
+        /* ======= BODY & CARDS ======= */
         .phase-body {
             padding: 1rem;
             overflow-y: auto;
@@ -128,103 +202,206 @@
             color: #adb5bd;
             text-align: center;
         }
+
+        .filters-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
     </style>
 </head>
 
 <body>
 
-    <div class="header-app px-4 py-2 d-flex justify-content-between align-items-center">
+    <div class="header-app px-4 py-2 d-flex flex-wrap justify-content-between align-items-center gap-3">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-egg-fill fs-4 text-warning"></i>
-            <h5 class="mb-0 fw-bold">Hatchery Monitoring System</h5>
+            <h5 class="mb-0 fw-bold d-none d-md-block">Hatchery Monitoring System</h5>
+            <h5 class="mb-0 fw-bold d-md-none">HMS</h5> <!-- Singkatan di layar kecil -->
         </div>
-        <div class="d-flex gap-3">
-            <input type="text" class="form-control form-control-sm" placeholder="Cari No. Dokumen..."
-                style="width: 200px;">
-            <button class="btn btn-sm btn-light"><i class="bi bi-person-circle"></i> Fakhri</button>
+        
+        <div class="filters-wrapper">
+            <!-- Filter Tanggal -->
+            <input type="date" class="form-control form-control-sm" id="filterDate" title="Filter Tanggal Setter In">
+            
+            <!-- Filter Whse -->
+            <select class="form-select form-select-sm" id="filterWhse" style="width:130px;" title="Filter Warehouse">
+                <option value="">Semua Whse</option>
+                <option value="TNS-SH">TNS-SH</option>
+                <option value="SWH-SH">SWH-SH</option>
+            </select>
+            
+            <!-- Pencarian -->
+            <div class="position-relative">
+                <input type="text" class="form-control form-control-sm" id="searchDoc" placeholder="Cari Dokumen..." style="width: 160px; padding-left: 28px;">
+                <i class="bi bi-search position-absolute text-muted" style="left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px;"></i>
+            </div>
+            
+            <button class="btn btn-sm btn-light ms-2 text-nowrap"><i class="bi bi-person-circle"></i> Fakhri</button>
         </div>
     </div>
 
-    <div class="cascading-container">
+    <!-- Menambahkan horizontal scroll khusus touch device jika tidak muat -->
+    <div class="cascading-container" id="scrollContainer">
+        
+        <!-- =================== FASE 1: SETTER IN =================== -->
         <div class="phase-column">
             <div class="phase-header bg-si">
-                <span><i class="bi bi-download me-2"></i>SETTER IN</span>
-                <span class="badge bg-dark" id="cnt-si">0</span>
+                <div class="phase-title">
+                    <i class="bi bi-download"></i> <span class="title-text text-black">SETTER IN</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 header-actions">
+                    <span class="badge bg-dark" id="cnt-si">0</span>
+                    <button class="btn-collapse text-black" onclick="toggleColumn(this)">
+                        <i class="bi bi-arrows-collapse"></i>
+                    </button>
+                </div>
             </div>
             <div class="phase-body" id="body-si"></div>
         </div>
 
+        <!-- =================== FASE 2: SETTER OUT =================== -->
         <div class="phase-column">
             <div class="phase-header bg-so">
-                <span><i class="bi bi-clipboard-check me-2"></i>SETTER OUT & QC</span>
-                <span class="badge bg-light text-dark" id="cnt-so">0</span>
+                <div class="phase-title">
+                    <i class="bi bi-clipboard-check"></i> <span class="title-text">SETTER OUT & QC</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 header-actions">
+                    <span class="badge bg-light text-dark" id="cnt-so">0</span>
+                    <button class="btn-collapse" onclick="toggleColumn(this)">
+                        <i class="bi bi-arrows-collapse"></i>
+                    </button>
+                </div>
             </div>
             <div id="empty-so" class="empty-state">
-                <p>Pilih Setter In dlu.</p>
+                <p>Pilih Dokumen Setter In dulu.</p>
             </div>
             <div class="phase-body d-none" id="body-so"></div>
         </div>
 
+        <!-- =================== FASE 3: HATCHER IN =================== -->
         <div class="phase-column">
             <div class="phase-header bg-hi">
-                <span><i class="bi bi-box-arrow-in-right me-2"></i>HATCHER IN</span>
-                <span class="badge bg-light text-dark" id="cnt-hi">0</span>
+                <div class="phase-title">
+                    <i class="bi bi-box-arrow-in-right"></i> <span class="title-text">HATCHER IN</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 header-actions">
+                    <span class="badge bg-light text-dark" id="cnt-hi">0</span>
+                    <button class="btn-collapse" onclick="toggleColumn(this)">
+                        <i class="bi bi-arrows-collapse"></i>
+                    </button>
+                </div>
             </div>
             <div id="empty-hi" class="empty-state">
-                <p>Pilih Setter In dlu.</p>
+                <p>Pilih Dokumen Setter In dulu.</p>
             </div>
             <div class="phase-body d-none" id="body-hi"></div>
         </div>
 
+        <!-- =================== FASE 4: HATCHER OUT =================== -->
         <div class="phase-column">
             <div class="phase-header bg-ho">
-                <span><i class="bi bi-egg-fried me-2"></i>HATCHER OUT</span>
-                <span class="badge bg-light text-dark" id="cnt-ho">0</span>
+                <div class="phase-title">
+                    <i class="bi bi-egg-fried"></i> <span class="title-text">HATCHER OUT</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 header-actions">
+                    <span class="badge bg-light text-dark" id="cnt-ho">0</span>
+                    <button class="btn-collapse" onclick="toggleColumn(this)">
+                        <i class="bi bi-arrows-collapse"></i>
+                    </button>
+                </div>
             </div>
             <div id="empty-ho" class="empty-state">
-                <p>Pilih Hatcher In dlu.</p>
+                <p>Pilih Dokumen Hatcher In dulu.</p>
             </div>
             <div class="phase-body d-none" id="body-ho"></div>
         </div>
+
     </div>
 
     <script>
-        // Logic Terintegrasi dengan LocalStorage
+        // ══════════════════════════════════════════
+        // UI INTERACTIONS
+        // ══════════════════════════════════════════
+        function toggleColumn(btn) {
+            const col = btn.closest('.phase-column');
+            col.classList.toggle('collapsed');
+            
+            // Ganti icon
+            const icon = btn.querySelector('i');
+            if(col.classList.contains('collapsed')) {
+                icon.className = 'bi bi-arrows-expand';
+            } else {
+                icon.className = 'bi bi-arrows-collapse';
+            }
+        }
+
+        // Listener Filter & Search
+        document.getElementById('filterDate').addEventListener('change', renderPhaseSI);
+        document.getElementById('filterWhse').addEventListener('change', renderPhaseSI);
+        document.getElementById('searchDoc').addEventListener('input', renderPhaseSI);
+
+
+        // ══════════════════════════════════════════
+        // DATA LOGIC
+        // ══════════════════════════════════════════
         function init() {
             renderPhaseSI();
             
-            // Re-render based on selection from localStorage or URL if needed
+            // Restore selection state
             const lastSI = localStorage.getItem('last_selected_si');
             if (lastSI) {
-                selectSI(lastSI, JSON.parse(localStorage.getItem('setterIn_' + lastSI))?.docNo);
+                const docObj = JSON.parse(localStorage.getItem('setterIn_' + lastSI));
+                if (docObj) selectSI(lastSI, docObj.docNo);
             }
         }
 
         function renderPhaseSI() {
             const body = document.getElementById('body-si');
             body.innerHTML = "";
+            
+            // Ambil filter
+            const fDate = document.getElementById('filterDate').value;
+            const fWhse = document.getElementById('filterWhse').value;
+            const sDoc  = document.getElementById('searchDoc').value.toLowerCase();
+
             const list = JSON.parse(localStorage.getItem('setterIn_list') || '[]');
+            let viewCount = 0;
             
             list.forEach(docNo => {
                 const item = JSON.parse(localStorage.getItem('setterIn_' + docNo));
+                if (!item) return;
+
+                // Filtering Math logic
+                if (fDate && item.date !== fDate) return;
+                if (fWhse && item.whs !== fWhse) return;
+                if (sDoc  && !item.docNo.toLowerCase().includes(sDoc)) return;
+                
+                viewCount++;
                 let totalQty = 0;
-                item.plans.forEach(p => totalQty += p.qty);
+                (item.plans || []).forEach(p => totalQty += p.qty);
 
                 body.innerHTML += `
-                <div class="doc-card" id="${docNo}" onclick="selectSI('${docNo}', '${item.docNo}')">
-                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
-                        <span class="fw-bold">${item.docNo}</span>
-                        <span class="badge bg-info text-dark">${item.whs}</span>
+                <div class="doc-card shadow-sm" id="${docNo}" onclick="selectSI('${docNo}', '${item.docNo}')">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                        <span class="fw-bold font-monospace">${item.docNo}</span>
+                        <span class="badge bg-info text-dark">${item.whs || 'WHS'}</span>
                     </div>
-                    <div class="small text-muted">Total Telur: <b>${totalQty.toLocaleString()}</b></div>
+                    <div class="small d-flex justify-content-between">
+                        <span class="text-muted"><i class="bi bi-calendar3"></i> ${item.date || '-'}</span>
+                    </div>
+                    <div class="small mt-1 text-muted">Total Telur: <b class="text-dark">${totalQty.toLocaleString()}</b> butir</div>
                     <div class="mt-3">
-                        <a href="form-setter-in.html?doc=${item.docNo}&mode=view" class="btn btn-sm btn-outline-primary w-100">Detail SI</a>
+                        <a href="form-setter-in.html?doc=${item.docNo}&mode=view" class="btn btn-sm btn-outline-primary w-100">
+                            Detail SI
+                        </a>
                     </div>
                 </div>`;
             });
             
-            body.insertAdjacentHTML('beforeend', `<a href="form-setter-in.html" class="btn btn-sm btn-outline-info w-100">+ Buat Setter In Baru</a>`);
-            document.getElementById('cnt-si').innerText = list.length;
+            body.insertAdjacentHTML('beforeend', `<a href="form-setter-in.html" class="btn btn-sm btn-outline-dark w-100 border-dashed">+ Buat Setter In Baru</a>`);
+            document.getElementById('cnt-si').innerText = viewCount;
         }
 
         function selectSI(docNo, docNum) {
@@ -237,7 +414,7 @@
             const soList = JSON.parse(localStorage.getItem('setterOut_list') || '[]')
                                .filter(id => {
                                    const data = JSON.parse(localStorage.getItem('setterOut_' + id));
-                                   return data.refIn === docNum;
+                                   return data && data.refIn === docNum;
                                });
             renderCol('so', soList, docNum, 'setterOut');
 
@@ -245,7 +422,7 @@
             const hiList = JSON.parse(localStorage.getItem('hatcherIn_list') || '[]')
                                .filter(id => {
                                    const data = JSON.parse(localStorage.getItem('hatcherIn_' + id));
-                                   return data.refSetterIn === docNum;
+                                   return data && data.refSetterIn === docNum;
                                });
             renderCol('hi', hiList, docNum, 'hatcherIn');
 
@@ -265,19 +442,19 @@
                 let content = "";
                 if (type === 'so') {
                     content = `
-                    <div class="doc-card" id="card-${docNo}" onclick="selectSO('${docNo}')">
-                        <h6 class="fw-bold mb-1">${docNo}</h6>
-                        <div class="row g-1 mb-2 text-center">
-                            <div class="col-12 small bg-light">Plan: ${item.plans.length} Batch</div>
+                    <div class="doc-card shadow-sm" id="card-${docNo}" onclick="selectSO('${docNo}')">
+                        <div class="d-flex justify-content-between mb-1">
+                            <h6 class="fw-bold font-monospace text-success mb-0">${docNo}</h6>
                         </div>
-                        <a href="form-setter-out.html?doc=${docNo}&mode=view" class="btn btn-sm btn-outline-success w-100">Detail & Candling</a>
+                        <div class="small text-muted mb-2"><i class="bi bi-diagram-3"></i> ${item?.plans?.length || 0} Plan Terselesaikan</div>
+                        <a href="form-setter-out.html?doc=${docNo}&mode=view" class="btn btn-sm btn-outline-success w-100">Detail Candling</a>
                     </div>`;
                 } else if (type === 'hi') {
                     content = `
-                    <div class="doc-card" id="card-${docNo}" onclick="selectHI('${docNo}')">
-                        <h6 class="fw-bold mb-1">${docNo}</h6>
-                        <div class="small mb-2">Plan: <b>${item.plans.length}</b> | Multi-Machine</div>
-                        <a href="form-hatcher-in.html?doc=${docNo}&mode=view" class="btn btn-sm btn-outline-warning w-100">Detail Hatcher In</a>
+                    <div class="doc-card shadow-sm" id="card-${docNo}" onclick="selectHI('${docNo}')">
+                        <h6 class="fw-bold font-monospace text-warning mb-1">${docNo}</h6>
+                        <div class="small text-muted mb-2"><i class="bi bi-box-seam"></i> ${item?.plans?.length || 0} Plan ditransfer</div>
+                        <a href="form-hatcher-in.html?doc=${docNo}&mode=view" class="btn btn-sm btn-outline-warning text-dark w-100">Detail Hatcher In</a>
                     </div>`;
                 }
                 body.insertAdjacentHTML('beforeend', content);
@@ -286,7 +463,8 @@
             // Tombol Tambah
             const btnColor = type === 'so' ? 'success' : 'warning';
             const link = type === 'so' ? 'form-setter-out.html' : 'form-hatcher-in.html';
-            body.insertAdjacentHTML('beforeend', `<a href="${link}?parentDoc=${parentDoc}" class="btn btn-sm btn-outline-${btnColor} w-100">+ Buat Baru</a>`);
+            const btnText = type === 'so' ? '+ Tambah Setter Out' : '+ Tambah Hatcher In';
+            body.insertAdjacentHTML('beforeend', `<a href="${link}?parentDoc=${parentDoc}" class="btn btn-sm btn-outline-${btnColor} w-100">${btnText}</a>`);
 
             document.getElementById(`cnt-${type}`).innerText = list.length;
         }
@@ -308,16 +486,16 @@
             const hoList = JSON.parse(localStorage.getItem('hatcherOut_list') || '[]')
                                .filter(hoId => {
                                    const data = JSON.parse(localStorage.getItem('hatcherOut_' + hoId));
-                                   return data.refHatcherIn === id;
+                                   return data && data.refHatcherIn === id;
                                });
 
             hoList.forEach(hoId => {
                 const data = JSON.parse(localStorage.getItem('hatcherOut_' + hoId));
                 body.innerHTML += `
-                <div class="doc-card">
-                    <h6 class="fw-bold mb-1">${hoId}</h6>
-                    <div class="small mb-2">Ref HI: ${data.refHatcherIn}</div>
-                    <div class="small">Status: <span class="badge bg-success">Panen Selesai</span></div>
+                <div class="doc-card shadow-sm">
+                    <h6 class="fw-bold font-monospace text-danger mb-1">${hoId}</h6>
+                    <div class="small text-muted mb-2">Tanggal: ${data?.date || '-'}</div>
+                    <div class="small mb-2"><span class="badge bg-success">Panen Selesai</span></div>
                     <a href="form-hatcher-out.html?doc=${hoId}&mode=view" class="btn btn-sm btn-outline-danger w-100 mt-2">Detail Panen</a>
                 </div>`;
             });
