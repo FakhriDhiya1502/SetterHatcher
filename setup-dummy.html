@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Dummy Data - Hatchery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: 'Segoe UI', sans-serif; }
+        .card { max-width: 500px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: none; }
+        .icon-box { width: 80px; height: 80px; background: #e0f2fe; color: #0284c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="card p-4 text-center">
+        <div class="icon-box">
+            <i class="bi bi-database-fill-gear"></i>
+        </div>
+        <h4 class="fw-bold mb-3">Install Dummy Data</h4>
+        <p class="text-muted mb-4">
+            Ini akan menghapus data lama di LocalStorage kamu dan menggantinya dengan 1 set data skenario lengkap (Setter In ➔ Setter Out ➔ Hatcher In ➔ Hatcher Out) untuk keperluan simulasi/demo.
+        </p>
+        <button class="btn btn-primary btn-lg mb-2" onclick="installDummyData()">
+            <i class="bi bi-rocket-takeoff me-2"></i> Inject Data ke LocalStorage
+        </button>
+        <a href="index.html" class="btn btn-outline-secondary">Kembali ke Dashboard</a>
+    </div>
+
+    <script>
+        function installDummyData() {
+            // Bersihkan data lama
+            localStorage.clear();
+
+            // ==========================================
+            // 1. DATA SETTER IN
+            // ==========================================
+            const si1 = {
+                docNo: "SI26-00101",
+                whs: "TNS-SH",
+                date: "2026-03-01",
+                time: "08:00",
+                dueDate: "2026-03-19",
+                plans: [
+                    { planNo: "240000040", item: "TELUR BEBEK LOKAL AAC", machine: "TNS-SET09", qty: 500, weight: 35.5 },
+                    { planNo: "240000166", item: "TELUR BEBEK PEKING", machine: "TNS-SET09", qty: 800, weight: 62.0 }
+                ]
+            };
+            
+            const si2 = {
+                docNo: "SI26-00102",
+                whs: "SWH-SH",
+                date: "2026-03-05",
+                time: "09:30",
+                dueDate: "2026-03-23",
+                plans: [
+                    { planNo: "240000200", item: "TELUR BEBEK PEKING", machine: "SWH-SET01", qty: 1200, weight: 95.0 }
+                ]
+            };
+
+            localStorage.setItem("setterIn_list", JSON.stringify(["SI26-00101", "SI26-00102"]));
+            localStorage.setItem("setterIn_SI26-00101", JSON.stringify(si1));
+            localStorage.setItem("setterIn_SI26-00102", JSON.stringify(si2));
+
+
+            // ==========================================
+            // 2. DATA SETTER OUT (Tarik untuk Candling)
+            // ==========================================
+            const so1 = {
+                docNo: "STO26-050",
+                refIn: "SI26-00101",
+                date: "2026-03-19",
+                plans: [
+                    {
+                        planId: "240000040", itemName: "TELUR BEBEK LOKAL AAC", machine: "TNS-SET09", qtyTarik: 500,
+                        stats: [{ type: "EED", qty: 10 }, { type: "Infertill", qty: 15 }] // Net = 475
+                    },
+                    {
+                        planId: "240000166", itemName: "TELUR BEBEK PEKING", machine: "TNS-SET09", qtyTarik: 800,
+                        stats: [{ type: "Busuk", qty: 5 }, { type: "Retak", qty: 5 }] // Net = 790
+                    }
+                ]
+            };
+
+            localStorage.setItem("setterOut_list", JSON.stringify(["STO26-050"]));
+            localStorage.setItem("setterOut_STO26-050", JSON.stringify(so1));
+
+
+            // ==========================================
+            // 3. DATA HATCHER IN (Masuk Mesin Tetas)
+            // ==========================================
+            const hi1 = {
+                docNo: "HTI26-0032",
+                refSetterIn: "SI26-00101",
+                date: "2026-03-19",
+                whs: "TNS-HATCHERY",
+                plans: [
+                    { planNo: "240000040", qtyNet: 475, machine: "TNS-HAT05", trayNo: "Tray A", item: "TELUR BEBEK LOKAL AAC" },
+                    { planNo: "240000166", qtyNet: 790, machine: "TNS-HAT05", trayNo: "Tray B", item: "TELUR BEBEK PEKING" }
+                ]
+            };
+
+            localStorage.setItem("hatcherIn_list", JSON.stringify(["HTI26-0032"]));
+            localStorage.setItem("hatcherIn_HTI26-0032", JSON.stringify(hi1));
+
+
+            // ==========================================
+            // 4. DATA HATCHER OUT (Panen)
+            // ==========================================
+            const ho1 = {
+                docNo: "HTO26-0080",
+                refHatcherIn: "HTI26-0032",
+                status: "POSTED",
+                date: "2026-03-22",
+                whs: "TNS-DOC",
+                remarks: "Hasil panen normal. Culling sesuai standar.",
+                plans: [
+                    {
+                        planNo: "240000040", item: "TELUR BEBEK LOKAL AAC", machine: "TNS-HAT05",
+                        qtyNet: 475, qtyDoc: 450, trayNo: "P1", harvestTime: "06:00", idx: 1,
+                        cullings: [ { code: "ST0165", qty: 5 }, { code: "ST0174", qty: 20 } ]
+                    },
+                    {
+                        planNo: "240000166", item: "TELUR BEBEK PEKING", machine: "TNS-HAT05",
+                        qtyNet: 790, qtyDoc: 700, trayNo: "P2", harvestTime: "06:30", idx: 2,
+                        cullings: [ { code: "ST0166", qty: 10 }, { code: "ST0174", qty: 80 } ]
+                    }
+                ]
+            };
+
+            localStorage.setItem("hatcherOut_list", JSON.stringify(["HTO26-0080"]));
+            localStorage.setItem("hatcherOut_HTO26-0080", JSON.stringify(ho1));
+
+            // Set fokus dashboard ke transaksi SI pertama
+            localStorage.setItem("last_selected_si", "SI26-00101");
+
+            alert("✅ Dummy Data Berhasil Dibuat!\nMensimulasikan 1 Skendario penuh dari Setter In hingga Panen (Hatcher Out).");
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

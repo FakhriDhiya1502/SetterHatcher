@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setter Out - Candling</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --blue-core: #0d6efd;
+            --blue-soft: #e8f4fd;
+            --orange-core: #fd7e14;
+            --orange-soft: #fff3e0;
+            --red-core: #dc3545;
+            --red-soft: #fff0f0;
+            --green-core: #198754;
+            --green-soft: #f0fff4;
+            --dark-navy: #0f1f3d;
+            --mid-navy: #1e3c72;
+            --card-bg: #ffffff;
+            --page-bg: #f0f2f5;
+            --text-muted-custom: #6c757d;
+            --border-color: #dee2e6;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--page-bg);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+        }
+
+        /* ─── HEADER ─────────────────────────────── */
+        .app-header {
+            background: var(--dark-navy);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-phase-tag {
+            background: var(--orange-core);
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        /* ─── CARDS ──────────────────────────────── */
+        .form-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+        }
+
+        .section-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted-custom);
+        }
+
+        /* ─── HEADER CARD (biru-oranye khas SO) ─── */
+        .so-header-stripe {
+            background: linear-gradient(135deg, var(--dark-navy) 0%, #1a5276 100%);
+            padding: 16px 20px;
+            color: white;
+        }
+
+        /* ─── PLAN CARD ───────────────────────────── */
+        .plan-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+            animation: slideIn 0.25s ease;
+        }
+
+        .plan-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .plan-card-header {
+            background: #fafafa;
+            border-bottom: 2px solid var(--blue-core);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .plan-id-badge {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--blue-core);
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── STAT TABLE ──────────────────────────── */
+        .afkir-table th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            background: #fafafa;
+            color: var(--text-muted-custom);
+            font-weight: 600;
+        }
+
+        .afkir-table td { vertical-align: middle; }
+
+        /* ─── GRAND SUMMARY BAR ───────────────────── */
+        .grand-summary {
+            background: linear-gradient(135deg, var(--dark-navy), #1a2a4a);
+            color: white;
+            border-radius: 10px;
+            padding: 20px 24px;
+        }
+
+        .grand-metric .gm-label {
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            opacity: 0.6;
+            margin-bottom: 2px;
+        }
+
+        .grand-metric .gm-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .divider-v {
+            width: 1px;
+            background: rgba(255,255,255,0.15);
+            margin: 0 8px;
+        }
+
+        /* ─── PLAN SUMMARY BAR ────────────────────── */
+        .plan-summary-bar {
+            background: #f8f9fa;
+            border-top: 1px solid var(--border-color);
+            padding: 10px 16px;
+            font-size: 13px;
+        }
+
+        /* ─── READONLY MODE ───────────────────────── */
+        .mode-view input, .mode-view select, .mode-view textarea {
+            background-color: #f8f9fa !important;
+            pointer-events: none;
+            border-color: #e9ecef;
+        }
+        .mode-view .hide-on-view { display: none !important; }
+
+        /* ─── MISC ────────────────────────────────── */
+        .bg-readonly { background-color: #e9ecef !important; }
+
+        .btn-so-primary {
+            background: var(--blue-core);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        .btn-so-primary:hover { background: #0a58ca; color: white; }
+
+        /* Status pill */
+        .status-pill {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        /* ─── ANIMATION ───────────────────────────── */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+
+<body id="mainBody">
+
+    <!-- ═══════════════════════════════════════════════
+         HEADER
+    ═══════════════════════════════════════════════ -->
+    <div class="app-header px-4 py-3 d-flex align-items-center mb-4">
+        <a href="index.html" class="btn btn-outline-light btn-sm me-3">
+            <i class="bi bi-arrow-left"></i> Kembali
+        </a>
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <span class="header-phase-tag">PHASE 2</span>
+            <h5 class="mb-0 fw-bold" id="titlePage">Setter Out — Candling</h5>
+            <span id="badgeView" class="badge bg-warning text-dark ms-2 d-none">
+                <i class="bi bi-eye me-1"></i>READ ONLY
+            </span>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+
+        <!-- ═══════════════════════════════════════════
+             HEADER DOKUMEN
+        ═══════════════════════════════════════════ -->
+        <div class="form-card">
+            <div class="so-header-stripe d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="section-label opacity-75 mb-1" style="color:#aed6f1;">Dokumen Candling</div>
+                    <h5 class="mb-0 fw-bold font-monospace" id="lblDocNo">STO26-— —</h5>
+                </div>
+                <div class="text-end">
+                    <div class="section-label opacity-75 mb-1" style="color:#aed6f1;">Status</div>
+                    <span class="status-pill bg-warning text-dark" id="statusPill">DRAFT</span>
+                </div>
+            </div>
+
+            <div class="p-4">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">No. Setter Out</label>
+                        <input type="text" class="form-control fw-bold bg-readonly font-monospace" id="docNo" readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Ref. Setter In</label>
+                        <input type="text" class="form-control bg-readonly font-monospace" id="parentDoc" readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Tanggal Tarik</label>
+                        <input type="text" class="form-control" id="docDate" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             LIST PLAN
+        ═══════════════════════════════════════════ -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h6 class="fw-bold mb-0">Rincian Penarikan per Plan</h6>
+                <small class="text-muted">Input Qty Tarik dan Statistik Afkir (EED, Busuk, Infertill, dll) per Plan No.</small>
+            </div>
+            <button class="btn btn-so-primary btn-sm hide-on-view" onclick="openPlanModal()">
+                <i class="bi bi-plus-lg me-1"></i>Tambah Plan
+            </button>
+        </div>
+
+        <div id="planList"></div>
+
+        <!-- ═══════════════════════════════════════════
+             GRAND SUMMARY
+        ═══════════════════════════════════════════ -->
+        <div class="grand-summary mb-4">
+            <div class="row text-center g-0">
+                <div class="col grand-metric">
+                    <div class="gm-label">Total Tarik</div>
+                    <div class="gm-value" id="gTarik">0</div>
+                </div>
+                <div class="divider-v d-none d-md-block"></div>
+                <div class="col grand-metric">
+                    <div class="gm-label" style="color:#fca5a5;">Total Afkir</div>
+                    <div class="gm-value" id="gAfkir" style="color:#f87171;">0</div>
+                </div>
+                <div class="divider-v d-none d-md-block"></div>
+                <div class="col grand-metric">
+                    <div class="gm-label" style="color:#86efac;">Net Hatcher In</div>
+                    <div class="gm-value" id="gNet" style="color:#4ade80;">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             CATATAN & ACTIONS
+        ═══════════════════════════════════════════ -->
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="form-card p-3 mb-0">
+                    <label class="section-label d-block mb-2">Catatan Candling</label>
+                    <textarea class="form-control" id="inputRemarks" rows="3"
+                        placeholder="Catatan kondisi mesin, batch khusus, atau temuan saat candling..."></textarea>
+                </div>
+            </div>
+            <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                <a href="index.html" class="btn btn-light border px-4">Batal</a>
+                <button class="btn btn-so-primary px-5 hide-on-view" onclick="saveData()">
+                    <i class="bi bi-floppy me-2"></i>Simpan Setter Out
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         MODAL: Browse Plan dari Setter In
+    ═══════════════════════════════════════════════ -->
+    <div class="modal fade" id="modalPlan" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header" style="background:var(--dark-navy); color:white;">
+                    <h5 class="modal-title">
+                        <i class="bi bi-box-arrow-in-down me-2 text-warning"></i>
+                        Pilih Plan dari Setter In
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="p-3 bg-light border-bottom">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Menampilkan Plan dari mesin Setter yang siap ditarik (Candling).
+                        </small>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3" style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Plan No</th>
+                                    <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Item</th>
+                                    <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Mesin Setter</th>
+                                    <th class="text-center" style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Qty Masuk</th>
+                                    <th style="background:#f8f9fa;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalPlanBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ══════════════════════════════════════════
+        // STATE
+        // ══════════════════════════════════════════
+        let currentMode = 'new';
+        let parentData = null;
+        let selectedPlans = [];
+        let planIdxCount = 0;
+
+        const planModal = new bootstrap.Modal(document.getElementById('modalPlan'), {});
+
+        // ══════════════════════════════════════════
+        // INIT
+        // ══════════════════════════════════════════
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentMode = urlParams.get('mode') || 'new';
+            const docParam = urlParams.get('doc');
+            const parentDocParam = urlParams.get('parentDoc');
+
+            if (currentMode === 'view') {
+                document.getElementById('mainBody').classList.add('mode-view');
+                document.getElementById('badgeView').classList.remove('d-none');
+                document.getElementById('titlePage').innerText = "Detail Setter Out";
+                document.getElementById('statusPill').textContent = 'POSTED';
+                document.getElementById('statusPill').className = 'status-pill bg-success text-white';
+
+                const data = JSON.parse(localStorage.getItem('setterOut_' + docParam));
+                if (data) renderSavedData(data);
+            } else {
+                const docNo = "STO" + Math.floor(Math.random() * 100000);
+                document.getElementById('docNo').value = docNo;
+                document.getElementById('lblDocNo').innerText = docNo;
+
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('docDate').value = today;
+                document.getElementById('docDate').type = 'date';
+
+                if (parentDocParam) {
+                    document.getElementById('parentDoc').value = parentDocParam;
+                    parentData = JSON.parse(localStorage.getItem('setterIn_' + parentDocParam));
+                }
+            }
+        };
+
+        // ══════════════════════════════════════════
+        // MODAL BROWSE PLAN
+        // ══════════════════════════════════════════
+        function openPlanModal() {
+            if (!parentData) {
+                alert("Tidak ada referensi Setter In. Mulai dari Dashboard dengan memilih Setter In dulu.");
+                return;
+            }
+            const tbody = document.getElementById('modalPlanBody');
+            tbody.innerHTML = '';
+
+            const alreadySelected = selectedPlans.map(p => p.planNo);
+            const availablePlans = parentData.plans.filter(p => !alreadySelected.includes(p.planNo));
+
+            if (availablePlans.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="5" class="text-center text-muted py-4">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>Semua plan sudah ditarik atau tidak ada plan tersedia.
+                    </td></tr>`;
+            } else {
+                availablePlans.forEach(p => {
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="ps-3 fw-bold font-monospace text-primary">${p.planNo}</td>
+                        <td class="small">${p.item}</td>
+                        <td><span class="badge bg-secondary">${p.machine}</span></td>
+                        <td class="text-center fw-bold text-success">${p.qty}</td>
+                        <td class="pe-3 text-end">
+                            <button class="btn btn-sm btn-so-primary">
+                                <i class="bi bi-plus-lg me-1"></i>Pilih
+                            </button>
+                        </td>
+                    `;
+                    tr.querySelector('button').onclick = () => addPlan(p.planNo, p.item, p.machine, p.qty);
+                    tbody.appendChild(tr);
+                });
+            }
+            planModal.show();
+        }
+
+        // ══════════════════════════════════════════
+        // ADD PLAN CARD
+        // ══════════════════════════════════════════
+        function addPlan(planNo, item, machine, qty) {
+            planIdxCount++;
+            const idx = planIdxCount;
+            selectedPlans.push({ idx, planNo, item, machine, qtyTarik: qty, stats: [] });
+
+            const container = document.getElementById('planList');
+            const planHtml = `
+            <div class="plan-card" id="card-${idx}">
+                <div class="plan-card-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="plan-id-badge">PLAN: ${planNo}</span>
+                        <span class="text-muted">|</span>
+                        <span class="small fw-semibold text-uppercase text-muted">${item}</span>
+                        <span class="badge bg-secondary ms-1">${machine}</span>
+                    </div>
+                    <button id="btnRemove-${idx}" class="btn btn-sm btn-outline-danger border-0 hide-on-view">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <div class="p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="section-label d-block mb-1">Qty Tarik</label>
+                            <input type="number" class="form-control fw-bold text-primary font-monospace input-tarik"
+                                id="tarik-${idx}" value="${qty}" oninput="calcTotals()">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <span class="fw-semibold">Statistik Afkir</span>
+                            <small class="text-muted ms-2">Jenis dan jumlah telur yang diafkir</small>
+                        </div>
+                        <button id="btnAddRow-${idx}" class="btn btn-sm btn-outline-danger hide-on-view">
+                            <i class="bi bi-plus-lg me-1"></i>Baris
+                        </button>
+                    </div>
+                    <table class="table table-sm table-bordered afkir-table">
+                        <thead>
+                            <tr>
+                                <th>Jenis Statistik Afkir</th>
+                                <th width="140" class="text-center">Qty</th>
+                                <th width="48" class="hide-on-view"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="statBody-${idx}"></tbody>
+                    </table>
+
+                    <div class="plan-summary-bar d-flex justify-content-between align-items-center rounded">
+                        <span class="section-label">Summary Plan</span>
+                        <div class="d-flex gap-3">
+                            <span class="small text-danger">Total Afkir: <b id="sumAfkir-${idx}">0</b></span>
+                            <span class="text-muted">|</span>
+                            <span class="small">Net Transfer: <b class="text-success fs-5 font-monospace" id="sumNet-${idx}">${qty}</b></span>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            container.insertAdjacentHTML('beforeend', planHtml);
+
+            document.getElementById(`btnRemove-${idx}`).onclick = () => removePlan(idx, planNo);
+            document.getElementById(`btnAddRow-${idx}`).onclick = () => addStatRow(idx);
+
+            planModal.hide();
+            calcTotals();
+        }
+
+        function removePlan(idx, planNo) {
+            document.getElementById('card-' + idx).remove();
+            selectedPlans = selectedPlans.filter(p => p.idx !== idx);
+            calcTotals();
+        }
+
+        // ══════════════════════════════════════════
+        // STAT ROW
+        // ══════════════════════════════════════════
+        function addStatRow(planIdx) {
+            const tbody = document.getElementById('statBody-' + planIdx);
+            const rowId = 'statrow-' + Math.random().toString(36).substr(2, 5);
+            const row = `
+                <tr id="${rowId}" class="stat-row" data-planidx="${planIdx}">
+                    <td>
+                        <select class="form-select form-select-sm stat-type">
+                            <option value="">Pilih Jenis</option>
+                            <option value="EED">EED</option>
+                            <option value="Infertill">Infertill</option>
+                            <option value="Busuk">Busuk</option>
+                            <option value="Retak">Retak</option>
+                            <option value="Explode">Explode</option>
+                        </select>
+                    </td>
+                    <td><input type="number" class="form-control form-control-sm text-center fw-bold stat-qty" value="0" min="0" oninput="calcTotals()"></td>
+                    <td class="text-center hide-on-view">
+                        <button id="btnDelRow-${rowId}" class="btn btn-sm btn-outline-danger border-0">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', row);
+
+            document.getElementById(`btnDelRow-${rowId}`).onclick = () => {
+                document.getElementById(rowId).remove();
+                calcTotals();
+            };
+        }
+
+        // ══════════════════════════════════════════
+        // CALC
+        // ══════════════════════════════════════════
+        function calcTotals() {
+            let gTarik = 0, gAfkir = 0;
+
+            selectedPlans.forEach(p => {
+                const tarikEl = document.getElementById('tarik-' + p.idx);
+                if (!tarikEl) return;
+
+                const tarik = parseInt(tarikEl.value) || 0;
+                let afkir = 0;
+
+                document.querySelectorAll('#statBody-' + p.idx + ' .stat-qty').forEach(input => {
+                    afkir += parseInt(input.value) || 0;
+                });
+
+                document.getElementById('sumAfkir-' + p.idx).innerText = afkir;
+                document.getElementById('sumNet-' + p.idx).innerText = (tarik - afkir);
+
+                gTarik += tarik;
+                gAfkir += afkir;
+            });
+
+            document.getElementById('gTarik').innerText = gTarik.toLocaleString();
+            document.getElementById('gAfkir').innerText = gAfkir.toLocaleString();
+            document.getElementById('gNet').innerText = (gTarik - gAfkir).toLocaleString();
+        }
+
+        // ══════════════════════════════════════════
+        // RENDER VIEW MODE
+        // ══════════════════════════════════════════
+        function renderSavedData(data) {
+            const docNo = data.docNum || data.docNo;
+            document.getElementById('docNo').value = docNo;
+            document.getElementById('lblDocNo').innerText = docNo;
+            document.getElementById('parentDoc').value = data.refIn;
+            document.getElementById('docDate').value = data.date;
+
+            const container = document.getElementById('planList');
+            let totalTarik = 0, totalAfkir = 0;
+
+            data.plans.forEach(plan => {
+                totalTarik += plan.qtyTarik;
+                let planAfkir = 0;
+
+                const statRows = plan.stats.map(s => {
+                    planAfkir += s.qty;
+                    return `
+                    <tr>
+                        <td><input type="text" class="form-control form-control-sm" value="${s.type}" readonly></td>
+                        <td><input type="number" class="form-control form-control-sm text-center fw-bold" value="${s.qty}" readonly></td>
+                        <td class="hide-on-view"></td>
+                    </tr>`;
+                }).join('');
+
+                totalAfkir += planAfkir;
+                const net = plan.qtyTarik - planAfkir;
+                const planId = plan.planId || plan.planNo;
+                const itemName = plan.itemName || plan.item;
+
+                container.insertAdjacentHTML('beforeend', `
+                <div class="plan-card">
+                    <div class="plan-card-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="plan-id-badge">PLAN: ${planId}</span>
+                            <span class="text-muted">|</span>
+                            <span class="small fw-semibold text-uppercase text-muted">${itemName}</span>
+                            <span class="badge bg-secondary ms-1">${plan.machine}</span>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
+                                <label class="section-label d-block mb-1">Qty Tarik</label>
+                                <input type="number" class="form-control fw-bold text-primary font-monospace" value="${plan.qtyTarik}" readonly>
+                            </div>
+                        </div>
+                        <table class="table table-sm table-bordered afkir-table">
+                            <thead>
+                                <tr>
+                                    <th>Jenis Statistik Afkir</th>
+                                    <th width="140" class="text-center">Qty</th>
+                                    <th width="48" class="hide-on-view"></th>
+                                </tr>
+                            </thead>
+                            <tbody>${statRows}</tbody>
+                        </table>
+                        <div class="plan-summary-bar d-flex justify-content-between align-items-center rounded">
+                            <span class="section-label">Summary Plan ${planId}</span>
+                            <div class="d-flex gap-3">
+                                <span class="small text-danger">Total Afkir: <b>${planAfkir}</b></span>
+                                <span class="text-muted">|</span>
+                                <span class="small">Net Transfer: <b class="text-success fs-5 font-monospace">${net}</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`);
+            });
+
+            document.getElementById('gTarik').innerText = totalTarik.toLocaleString();
+            document.getElementById('gAfkir').innerText = totalAfkir.toLocaleString();
+            document.getElementById('gNet').innerText = (totalTarik - totalAfkir).toLocaleString();
+        }
+
+        // ══════════════════════════════════════════
+        // SAVE
+        // ══════════════════════════════════════════
+        function saveData() {
+            if (selectedPlans.length === 0) {
+                alert("Tambahkan minimal 1 Plan untuk di-tarik!");
+                return;
+            }
+
+            const plansToSave = selectedPlans.map(p => {
+                const tarik = parseInt(document.getElementById('tarik-' + p.idx).value) || 0;
+                const stats = [];
+                document.querySelectorAll('#statBody-' + p.idx + ' tr').forEach(tr => {
+                    const type = tr.querySelector('.stat-type')?.value;
+                    const qty = parseInt(tr.querySelector('.stat-qty')?.value) || 0;
+                    if (type && qty > 0) stats.push({ type, qty });
+                });
+                return { planId: p.planNo, itemName: p.item, machine: p.machine, qtyTarik: tarik, stats };
+            });
+
+            const payload = {
+                docNo: document.getElementById('docNo').value,
+                refIn: document.getElementById('parentDoc').value,
+                date: document.getElementById('docDate').value,
+                remarks: document.getElementById('inputRemarks').value,
+                plans: plansToSave
+            };
+
+            localStorage.setItem('setterOut_' + payload.docNo, JSON.stringify(payload));
+
+            let list = JSON.parse(localStorage.getItem('setterOut_list') || '[]');
+            if (!list.includes(payload.docNo)) {
+                list.push(payload.docNo);
+                localStorage.setItem('setterOut_list', JSON.stringify(list));
+            }
+
+            alert('✅ Data Setter Out berhasil disimpan!');
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

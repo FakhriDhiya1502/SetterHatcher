@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setter In - Input Telur HE</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --blue-core:    #0d6efd;
+            --blue-soft:    #e8f4fd;
+            --cyan-core:    #0dcaf0;
+            --green-core:   #198754;
+            --green-soft:   #f0fff4;
+            --dark-navy:    #0f1f3d;
+            --mid-navy:     #1e3c72;
+            --card-bg:      #ffffff;
+            --page-bg:      #f0f2f5;
+            --text-muted-c: #6c757d;
+            --border-color: #dee2e6;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--page-bg);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+        }
+
+        /* ─── HEADER ─────────────────────────────── */
+        .app-header {
+            background: var(--dark-navy);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-phase-tag {
+            background: var(--blue-core);
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        /* ─── CARDS ──────────────────────────────── */
+        .form-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+        }
+
+        .section-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted-c);
+        }
+
+        /* ─── HEADER STRIPE (biru navy khas SI) ──── */
+        .si-header-stripe {
+            background: linear-gradient(135deg, var(--dark-navy) 0%, var(--mid-navy) 100%);
+            padding: 16px 20px;
+            color: white;
+        }
+
+        /* ─── TABLE STYLING ───────────────────────── */
+        .plan-table th {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: #f8f9fa;
+            color: var(--text-muted-c);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .plan-table td { vertical-align: middle; }
+
+        .plan-table tbody tr {
+            animation: slideIn 0.2s ease;
+        }
+
+        .plan-table tfoot td {
+            background: #f0f2f5;
+            font-weight: 700;
+        }
+
+        .row-number {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted-c);
+            text-align: center;
+        }
+
+        /* ─── GRAND SUMMARY ───────────────────────── */
+        .grand-summary {
+            background: linear-gradient(135deg, var(--dark-navy), #0a2a5c);
+            color: white;
+            border-radius: 10px;
+            padding: 20px 24px;
+        }
+
+        .grand-metric .gm-label {
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            opacity: 0.6;
+            margin-bottom: 2px;
+        }
+
+        .grand-metric .gm-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .divider-v {
+            width: 1px;
+            background: rgba(255,255,255,0.15);
+            margin: 0 8px;
+        }
+
+        /* ─── READONLY MODE ───────────────────────── */
+        .mode-view input, .mode-view select, .mode-view textarea {
+            background-color: #f8f9fa !important;
+            pointer-events: none;
+            border-color: #e9ecef;
+        }
+        .mode-view .hide-on-view { display: none !important; }
+
+        /* ─── MISC ────────────────────────────────── */
+        .bg-readonly { background-color: #e9ecef !important; }
+
+        .btn-si-primary {
+            background: var(--blue-core);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        .btn-si-primary:hover { background: #0a58ca; color: white; }
+
+        .status-pill {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-8px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Due date badge */
+        .due-badge {
+            background: #fff3e0;
+            border: 1px solid #ffc078;
+            color: #c96a0c;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+        }
+    </style>
+</head>
+
+<body id="mainBody">
+
+    <!-- ═══════════════════════════════════════════════
+         HEADER
+    ═══════════════════════════════════════════════ -->
+    <div class="app-header px-4 py-3 d-flex align-items-center mb-4">
+        <a href="index.html" class="btn btn-outline-light btn-sm me-3">
+            <i class="bi bi-arrow-left"></i> Kembali
+        </a>
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <span class="header-phase-tag">PHASE 1</span>
+            <h5 class="mb-0 fw-bold" id="titlePage">Setter In — Input Telur HE</h5>
+            <span id="badgeView" class="badge bg-warning text-dark ms-2 d-none">
+                <i class="bi bi-eye me-1"></i>READ ONLY
+            </span>
+        </div>
+    </div>
+
+    <div class="container-fluid px-4 pb-5">
+
+        <!-- ═══════════════════════════════════════════
+             HEADER DOKUMEN
+        ═══════════════════════════════════════════ -->
+        <div class="form-card">
+            <div class="si-header-stripe d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="section-label opacity-75 mb-1" style="color:#90caf9;">Dokumen Setter In</div>
+                    <h5 class="mb-0 fw-bold font-monospace" id="lblDocNo">SI26-— —</h5>
+                </div>
+                <div class="text-end">
+                    <div class="section-label opacity-75 mb-1" style="color:#90caf9;">Status</div>
+                    <span class="status-pill bg-warning text-dark" id="statusPill">DRAFT</span>
+                </div>
+            </div>
+
+            <div class="p-4">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">No. Dokumen</label>
+                        <input type="text" class="form-control fw-bold bg-readonly font-monospace" id="docNo" value="Auto Generated" readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Warehouse Hatchery</label>
+                        <select class="form-select" id="whsHatchery">
+                            <option value="">— Pilih Gudang —</option>
+                            <option value="TNS-SH" selected>TNS-SH (Tunas Hatchery)</option>
+                            <option value="SWH-SH">SWH-SH (Sawah Hatchery)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Setter Date & Time</label>
+                        <div class="input-group">
+                            <input type="date" class="form-control" id="setterDate">
+                            <input type="time" class="form-control" id="setterTime" value="09:00">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Setter Due Date</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="date" class="form-control bg-readonly" id="dueDate" readonly>
+                            <span class="due-badge text-nowrap">+18 hari</span>
+                        </div>
+                        <small class="text-muted" style="font-size:11px;">*Auto hitung dari Setter Date</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             RINCIAN PLAN
+        ═══════════════════════════════════════════ -->
+        <div class="form-card">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold mb-0">Rincian Telur (HE) per Plan</h6>
+                    <small class="text-muted">Satu dokumen Setter In bisa menampung banyak Plan No dari kandang yang berbeda.</small>
+                </div>
+                <button class="btn btn-si-primary btn-sm hide-on-view" onclick="addRow()">
+                    <i class="bi bi-plus-lg me-1"></i>Tambah Plan
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered plan-table mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th width="44" class="text-center">#</th>
+                            <th width="18%">Plan No & Asal Kandang</th>
+                            <th width="24%">Item Code HE (Telur)</th>
+                            <th width="14%">Mesin Setter</th>
+                            <th width="11%" class="text-center">Qty (Butir)</th>
+                            <th width="11%" class="text-center">Berat (Kg)</th>
+                            <th width="48" class="text-center hide-on-view"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="gridBody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-end section-label py-2 pe-3">Total Keseluruhan</td>
+                            <td class="text-center fw-bold text-primary font-monospace fs-5" id="totalQty">0</td>
+                            <td class="text-center fw-bold text-primary font-monospace fs-5" id="totalWeight">0.0</td>
+                            <td class="hide-on-view"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             GRAND SUMMARY
+        ═══════════════════════════════════════════ -->
+        <div class="grand-summary mb-4">
+            <div class="row text-center g-0">
+                <div class="col grand-metric">
+                    <div class="gm-label">Total Plan</div>
+                    <div class="gm-value" id="gTotalPlan">0</div>
+                </div>
+                <div class="divider-v d-none d-md-block"></div>
+                <div class="col grand-metric">
+                    <div class="gm-label" style="color:#90caf9;">Total Telur (Butir)</div>
+                    <div class="gm-value" id="gTotalQty" style="color:#64b5f6;">0</div>
+                </div>
+                <div class="divider-v d-none d-md-block"></div>
+                <div class="col grand-metric">
+                    <div class="gm-label" style="color:#a5d6a7;">Total Berat (Kg)</div>
+                    <div class="gm-value" id="gTotalWeight" style="color:#69f0ae;">0.0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             CATATAN & ACTIONS
+        ═══════════════════════════════════════════ -->
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="form-card p-3 mb-0">
+                    <label class="section-label d-block mb-2">Remarks / Catatan</label>
+                    <textarea class="form-control" id="inputRemarks" rows="3"
+                        placeholder="Catatan khusus untuk batch ini (asal kandang, kondisi, dll)..."></textarea>
+                </div>
+            </div>
+            <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                <a href="index.html" class="btn btn-light border px-4" id="btnCancel">Batal</a>
+                <button class="btn btn-si-primary px-5 hide-on-view" onclick="saveData()">
+                    <i class="bi bi-floppy me-2"></i>Simpan Setter In
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ══════════════════════════════════════════
+        // INIT
+        // ══════════════════════════════════════════
+        const urlParams  = new URLSearchParams(window.location.search);
+        const isViewMode = urlParams.get('mode') === 'view';
+        const docNoParam = urlParams.get('doc');
+        let rowCount = 0;
+
+        window.onload = () => {
+            // Set default Setter Date = today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('setterDate').value = today;
+            updateDueDate();
+
+            if (isViewMode) {
+                document.getElementById('mainBody').classList.add('mode-view');
+                document.getElementById('badgeView').classList.remove('d-none');
+                document.getElementById('titlePage').innerText = "Detail Setter In";
+                document.getElementById('statusPill').textContent = 'POSTED';
+                document.getElementById('statusPill').className  = 'status-pill bg-success text-white';
+                document.getElementById('btnCancel').innerText = "Kembali";
+                document.getElementById('btnCancel').classList.replace('btn-light', 'btn-primary');
+
+                const data = JSON.parse(localStorage.getItem('setterIn_' + docNoParam));
+                if (data) {
+                    renderViewData(data);
+                } else {
+                    document.getElementById('gridBody').innerHTML = `
+                        <tr><td colspan="7" class="text-center text-muted py-4">
+                            <i class="bi bi-exclamation-circle me-2"></i>Data tidak ditemukan.
+                        </td></tr>`;
+                }
+            } else {
+                document.getElementById('titlePage').innerText = "Buat Setter In Baru";
+                // Generate doc number
+                const docNo = "SI" + new Date().getFullYear().toString().slice(-2) + "-" + String(Math.floor(Math.random() * 99999)).padStart(5, '0');
+                document.getElementById('docNo').value    = docNo;
+                document.getElementById('lblDocNo').innerText = docNo;
+                addRow(); // Start with 1 empty row
+            }
+        };
+
+        // ══════════════════════════════════════════
+        // DUE DATE AUTO-CALC (+18 days)
+        // ══════════════════════════════════════════
+        function updateDueDate() {
+            const dateVal = document.getElementById('setterDate').value;
+            if (!dateVal) return;
+            const due = new Date(dateVal);
+            due.setDate(due.getDate() + 18);
+            document.getElementById('dueDate').value = due.toISOString().split('T')[0];
+        }
+        document.getElementById('setterDate').addEventListener('change', updateDueDate);
+
+        // ══════════════════════════════════════════
+        // ADD ROW (INPUT MODE)
+        // ══════════════════════════════════════════
+        function addRow() {
+            rowCount++;
+            const tbody = document.getElementById('gridBody');
+            const tr = document.createElement('tr');
+            tr.id = `row-${rowCount}`;
+            tr.innerHTML = `
+                <td class="row-number">${rowCount}</td>
+                <td>
+                    <input type="text" class="form-control form-control-sm fw-bold font-monospace plan-no"
+                        placeholder="Cari Plan No..." style="font-size:12px;">
+                    <small class="text-muted" style="font-size:10px;">Contoh: 240000040</small>
+                </td>
+                <td>
+                    <select class="form-select form-select-sm plan-item">
+                        <option value="">— Pilih Item Telur —</option>
+                        <option value="TELUR BEBEK LOKAL AAC">TELUR BEBEK LOKAL AAC</option>
+                        <option value="TELUR BEBEK PEKING">TELUR BEBEK PEKING</option>
+                        <option value="TELUR BEBEK HIBRIDA">TELUR BEBEK HIBRIDA</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select form-select-sm plan-machine">
+                        <option value="TNS-SET01">TNS-SET01</option>
+                        <option value="TNS-SET02">TNS-SET02</option>
+                        <option value="TNS-SET03">TNS-SET03</option>
+                        <option value="TNS-SET04">TNS-SET04</option>
+                        <option value="TNS-SET09" selected>TNS-SET09</option>
+                        <option value="TNS-SET10">TNS-SET10</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm text-center fw-bold calc-qty"
+                        value="0" min="0" oninput="calculateTotals()">
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm text-center calc-weight"
+                        value="0.0" step="0.1" min="0" oninput="calculateTotals()">
+                </td>
+                <td class="text-center hide-on-view">
+                    <button class="btn btn-outline-danger btn-sm border-0" onclick="removeRow('row-${rowCount}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            calculateTotals();
+        }
+
+        function removeRow(rowId) {
+            document.getElementById(rowId).remove();
+            calculateTotals();
+        }
+
+        // ══════════════════════════════════════════
+        // TOTALS
+        // ══════════════════════════════════════════
+        function calculateTotals() {
+            let totalQty = 0, totalWeight = 0;
+            document.querySelectorAll('.calc-qty').forEach(el => totalQty += parseInt(el.value) || 0);
+            document.querySelectorAll('.calc-weight').forEach(el => totalWeight += parseFloat(el.value) || 0);
+
+            const planCount = document.querySelectorAll('#gridBody tr').length;
+
+            document.getElementById('totalQty').innerText    = totalQty.toLocaleString();
+            document.getElementById('totalWeight').innerText = totalWeight.toFixed(1);
+            document.getElementById('gTotalPlan').innerText  = planCount;
+            document.getElementById('gTotalQty').innerText   = totalQty.toLocaleString();
+            document.getElementById('gTotalWeight').innerText = totalWeight.toFixed(1);
+        }
+
+        // ══════════════════════════════════════════
+        // RENDER VIEW MODE (from localStorage)
+        // ══════════════════════════════════════════
+        function renderViewData(data) {
+            document.getElementById('docNo').value       = data.docNo;
+            document.getElementById('lblDocNo').innerText = data.docNo;
+            document.getElementById('whsHatchery').value = data.whs || '';
+            document.getElementById('setterDate').value  = data.date || '';
+            document.getElementById('setterTime').value  = data.time || '';
+            document.getElementById('dueDate').value     = data.dueDate || '';
+            document.getElementById('inputRemarks').value = data.remarks || '';
+
+            const tbody = document.getElementById('gridBody');
+            (data.plans || []).forEach((plan, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="row-number">${idx + 1}</td>
+                    <td><input type="text" class="form-control form-control-sm fw-bold font-monospace"
+                        value="${plan.planNo || ''}" readonly></td>
+                    <td><input type="text" class="form-control form-control-sm"
+                        value="${plan.item || ''}" readonly></td>
+                    <td><input type="text" class="form-control form-control-sm text-center"
+                        value="${plan.machine || ''}" readonly></td>
+                    <td><input type="number" class="form-control form-control-sm text-center fw-bold text-primary calc-qty font-monospace"
+                        value="${plan.qty || 0}" readonly></td>
+                    <td><input type="number" class="form-control form-control-sm text-center calc-weight"
+                        value="${plan.weight || 0}" readonly></td>
+                    <td class="hide-on-view"></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            calculateTotals();
+        }
+
+        // ══════════════════════════════════════════
+        // SAVE
+        // ══════════════════════════════════════════
+        function getPayload() {
+            const rows = document.querySelectorAll('#gridBody tr');
+            const plans = [];
+            rows.forEach(row => {
+                const planNo = row.querySelector('.plan-no')?.value?.trim()
+                            || row.querySelectorAll('input[readonly]')[0]?.value?.trim();
+                const item   = row.querySelector('.plan-item')?.value
+                            || row.querySelectorAll('input[readonly]')[1]?.value;
+                const machine = row.querySelector('.plan-machine')?.value
+                             || row.querySelectorAll('input[readonly]')[2]?.value;
+                const qty    = parseInt(row.querySelector('.calc-qty')?.value) || 0;
+                const weight = parseFloat(row.querySelector('.calc-weight')?.value) || 0;
+
+                if (planNo) plans.push({ planNo, item, machine, qty, weight });
+            });
+
+            return {
+                docNo:   document.getElementById('docNo').value,
+                whs:     document.getElementById('whsHatchery').value,
+                date:    document.getElementById('setterDate').value,
+                time:    document.getElementById('setterTime').value,
+                dueDate: document.getElementById('dueDate').value,
+                remarks: document.getElementById('inputRemarks').value,
+                plans
+            };
+        }
+
+        function saveData() {
+            const payload = getPayload();
+            if (payload.plans.length === 0) {
+                alert("Masukkan minimal satu Plan terlebih dahulu!");
+                return;
+            }
+            if (!payload.whs) {
+                alert("Pilih Warehouse Hatchery terlebih dahulu!");
+                return;
+            }
+
+            localStorage.setItem('setterIn_' + payload.docNo, JSON.stringify(payload));
+
+            let list = JSON.parse(localStorage.getItem('setterIn_list') || '[]');
+            if (!list.includes(payload.docNo)) {
+                list.push(payload.docNo);
+                localStorage.setItem('setterIn_list', JSON.stringify(list));
+            }
+
+            alert('✅ Data Setter In berhasil disimpan!');
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

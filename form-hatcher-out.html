@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hatcher Out - Hasil Panen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --red-core: #dc3545;
+            --red-soft: #fff0f0;
+            --red-border: #f5c2c7;
+            --green-core: #198754;
+            --green-soft: #f0fff4;
+            --amber: #fd7e14;
+            --amber-soft: #fff3e0;
+            --dark-navy: #0f1f3d;
+            --mid-navy: #1e3c72;
+            --card-bg: #ffffff;
+            --page-bg: #f0f2f5;
+            --text-muted-custom: #6c757d;
+            --border-color: #dee2e6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--page-bg);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+        }
+
+        /* ─── HEADER ─────────────────────────────── */
+        .app-header {
+            background: var(--dark-navy);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-phase-tag {
+            background: var(--red-core);
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        /* ─── CARDS ──────────────────────────────── */
+        .form-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+        }
+
+        .section-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted-custom);
+        }
+
+        /* ─── HEADER CARD (merah khas HO) ────────── */
+        .ho-header-stripe {
+            background: linear-gradient(135deg, var(--dark-navy) 0%, #c0392b 100%);
+            padding: 16px 20px;
+            color: white;
+        }
+
+        /* ─── PLAN CARD ───────────────────────────── */
+        .plan-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+
+        .plan-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .plan-card-header {
+            background: #fafafa;
+            border-bottom: 2px solid var(--red-core);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .plan-id-badge {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--red-core);
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── HASIL PANEN METRICS ─────────────────── */
+        .metric-box {
+            border-radius: 8px;
+            padding: 12px 14px;
+            text-align: center;
+        }
+
+        .metric-box .metric-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            margin-bottom: 4px;
+        }
+
+        .metric-box .metric-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .metric-box.metric-in {
+            background: #e8f4fd;
+            color: #0d6efd;
+        }
+
+        .metric-box.metric-doc {
+            background: var(--green-soft);
+            color: var(--green-core);
+        }
+
+        .metric-box.metric-culling {
+            background: var(--red-soft);
+            color: var(--red-core);
+        }
+
+        .metric-box.metric-hr {
+            background: #f3e8ff;
+            color: #6f42c1;
+        }
+
+        /* ─── CULLING TABLE ───────────────────────── */
+        .culling-table th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            background: #fafafa;
+            color: var(--text-muted-custom);
+            font-weight: 600;
+        }
+
+        .culling-table td {
+            vertical-align: middle;
+        }
+
+        /* ─── GRAND SUMMARY BAR ───────────────────── */
+        .grand-summary {
+            background: linear-gradient(135deg, var(--dark-navy), #1a0a2e);
+            color: white;
+            border-radius: 10px;
+            padding: 20px 24px;
+        }
+
+        .grand-metric .gm-label {
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            opacity: 0.6;
+            margin-bottom: 2px;
+        }
+
+        .grand-metric .gm-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .divider-v {
+            width: 1px;
+            background: rgba(255, 255, 255, 0.15);
+            margin: 0 8px;
+        }
+
+        /* ─── READONLY MODE ───────────────────────── */
+        .mode-view input,
+        .mode-view select,
+        .mode-view textarea {
+            background-color: #f8f9fa !important;
+            pointer-events: none;
+            border-color: #e9ecef;
+        }
+
+        .mode-view .hide-on-view {
+            display: none !important;
+        }
+
+        /* ─── MISC ────────────────────────────────── */
+        .bg-readonly {
+            background-color: #e9ecef !important;
+        }
+
+        .btn-ho-primary {
+            background: var(--red-core);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+
+        .btn-ho-primary:hover {
+            background: #b02a37;
+            color: white;
+        }
+
+        .plan-summary-bar {
+            background: #f8f9fa;
+            border-top: 1px solid var(--border-color);
+            padding: 10px 16px;
+            font-size: 13px;
+        }
+
+        /* ─── ANIMATION ───────────────────────────── */
+        .plan-card {
+            animation: slideIn 0.25s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Status pill */
+        .status-pill {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body id="mainBody">
+
+    <!-- ═══════════════════════════════════════════════
+         HEADER
+    ═══════════════════════════════════════════════ -->
+    <div class="app-header px-4 py-3 d-flex align-items-center mb-4">
+        <a href="index.html" class="btn btn-outline-light btn-sm me-3">
+            <i class="bi bi-arrow-left"></i> Kembali
+        </a>
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <span class="header-phase-tag">PHASE 4</span>
+            <h5 class="mb-0 fw-bold" id="pageTitle">Hatcher Out — Hasil Panen</h5>
+            <span id="viewModeBadge" class="badge bg-warning text-dark ms-2" style="display:none;">
+                <i class="bi bi-eye me-1"></i>READ ONLY
+            </span>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+
+        <!-- ═══════════════════════════════════════════
+             HEADER DOKUMEN
+        ═══════════════════════════════════════════ -->
+        <div class="form-card">
+            <div class="ho-header-stripe d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="section-label opacity-75 mb-1" style="color:#ffcdd2;">Dokumen Panen</div>
+                    <h5 class="mb-0 fw-bold" id="lblDocNo">HTO26-— —</h5>
+                </div>
+                <div class="text-end">
+                    <div class="section-label opacity-75 mb-1" style="color:#ffcdd2;">Status</div>
+                    <span class="status-pill bg-warning text-dark" id="statusPill">DRAFT</span>
+                </div>
+            </div>
+
+            <div class="p-4">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">No. Hatcher Out</label>
+                        <input type="text" class="form-control fw-bold bg-readonly font-monospace" id="inputDocNo"
+                            value="Auto Generated" readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Ref. Hatcher In</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control bg-readonly font-monospace" id="refHatcherIn"
+                                value="HTI26-0001" readonly>
+                            <button class="btn btn-outline-danger hide-on-view" onclick="openBrowseModal()"
+                                title="Browse Hatcher In">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Tanggal Panen</label>
+                        <input type="date" class="form-control" id="inputDate" value="2026-03-25">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Warehouse Tujuan DOC</label>
+                        <select class="form-select" id="selectWhs">
+                            <option value="">-- Pilih Gudang --</option>
+                            <option value="TNS-DOC" selected>TNS-DOC (Gudang DOC Tunas)</option>
+                            <option value="SWH-DOC">SWH-DOC (Gudang DOC Sawah)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             LIST PLAN PANEN
+        ═══════════════════════════════════════════ -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h6 class="fw-bold mb-0">Rincian Panen per Plan</h6>
+                <small class="text-muted">Input hasil DOC, culling, dan telur tidak menetas per Plan No.</small>
+            </div>
+            <button class="btn btn-ho-primary btn-sm hide-on-view" onclick="openPlanModal()">
+                <i class="bi bi-plus-lg me-1"></i>Tambah Plan
+            </button>
+        </div>
+
+        <div id="planList"></div>
+
+        <!-- ═══════════════════════════════════════════
+             GRAND SUMMARY
+        ═══════════════════════════════════════════ -->
+        <div class="grand-summary mb-4">
+            <div class="row text-center g-0">
+                <div class="col grand-metric">
+                    <div class="gm-label">Total Masuk</div>
+                    <div class="gm-value" id="gTotalIn">0</div>
+                </div>
+                <div class="divider-v d-none d-md-block"></div>
+                <div class="col grand-metric">
+                    <div class="gm-label" style="color:#86efac;">Total DOC Hidup</div>
+                    <div class="gm-value" id="gTotalDoc" style="color:#4ade80;">0</div>
+                </div>
+                <div class="divider-v d-none d-md-block"></div>
+                <div class="col grand-metric">
+                    <div class="gm-label" style="color:#fca5a5;">Total Culling</div>
+                    <div class="gm-value" id="gTotalCulling" style="color:#f87171;">0</div>
+                </div>
+                <div class="divider-v d-none d-md-block"></div>
+                <div class="col grand-metric">
+                    <div class="gm-label" style="color:#c4b5fd;">Hatch Rate</div>
+                    <div class="gm-value" id="gHatchRate" style="color:#a78bfa;">—%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             CATATAN & ACTIONS
+        ═══════════════════════════════════════════ -->
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="form-card p-3 mb-0">
+                    <label class="section-label d-block mb-2">Catatan Panen</label>
+                    <textarea class="form-control" id="inputRemarks" rows="3"
+                        placeholder="Kondisi cuaca, catatan mesin, atau hal khusus selama panen..."></textarea>
+                </div>
+            </div>
+            <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                <a href="index.html" class="btn btn-light border px-4" id="btnCancel">Batal</a>
+                <button class="btn btn-ho-primary px-5 hide-on-view" onclick="saveData()">
+                    <i class="bi bi-floppy me-2"></i>Simpan Hatcher Out
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         MODAL: Browse Dokumen Hatcher In
+    ═══════════════════════════════════════════════ -->
+    <div class="modal fade" id="hatcherInModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header" style="background:var(--dark-navy); color:white;">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-text me-2 text-warning"></i>
+                        Pilih Dokumen Hatcher In
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="list-group list-group-flush" id="htiDocList">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         MODAL: Browse Plan dari Hatcher In
+    ═══════════════════════════════════════════════ -->
+    <div class="modal fade" id="planModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header" style="background:var(--dark-navy); color:white;">
+                    <h5 class="modal-title">
+                        <i class="bi bi-box-arrow-in-down me-2 text-danger"></i>
+                        Pilih Plan dari Hatcher In
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="p-3 bg-light border-bottom">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Menampilkan Plan yang sudah masuk mesin Hatcher dan siap dipanen.
+                        </small>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3"
+                                        style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">
+                                        Plan No</th>
+                                    <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">
+                                        Item</th>
+                                    <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">
+                                        Mesin Hatcher</th>
+                                    <th class="text-center"
+                                        style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">
+                                        Qty Net (Masuk)</th>
+                                    <th style="background:#f8f9fa;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalPlanBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ══════════════════════════════════════════
+        // CONFIG & STATE
+        // ══════════════════════════════════════════
+
+        const LS_KEY = 'hatcherOut_draft';
+
+        // Data plans dari Hatcher In (Dinamis dari localStorage)
+        let availableHatcherInPlans = [];
+        let completedHTIDocs = []; 
+
+        // Master jenis culling
+        const cullingMaster = [
+            { code: "ST0165", label: "Culling — DOD Kering" },
+            { code: "ST0166", label: "Culling — DOD Cacat" },
+            { code: "ST0174", label: "Telur Tidak Menetas" },
+            { code: "ST0175", label: "DOD Mati Saat Panen" },
+        ];
+
+        let selectedPlans = [];
+        let planIdx = 0;
+        let cullingRowCount = {};
+
+        const planModal = new bootstrap.Modal(document.getElementById('planModal'));
+        const docModal = new bootstrap.Modal(document.getElementById('hatcherInModal'));
+
+        // ══════════════════════════════════════════
+        // INIT
+        // ══════════════════════════════════════════
+
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isViewMode = urlParams.get('mode') === 'view';
+            const docParam = urlParams.get('doc');
+            const refHI = urlParams.get('refHI');
+
+            if (isViewMode) {
+                document.getElementById('mainBody').classList.add('mode-view');
+                document.getElementById('viewModeBadge').style.display = 'inline-block';
+                document.getElementById('pageTitle').innerText = "Detail Hatcher Out";
+                document.getElementById('btnCancel').innerText = "Kembali ke Dashboard";
+                document.getElementById('btnCancel').classList.replace('btn-light', 'btn-primary');
+                document.getElementById('statusPill').textContent = 'POSTED';
+                document.getElementById('statusPill').className = 'status-pill bg-success text-white';
+                loadViewData(docParam);
+            } else {
+                loadDraft();
+                if (refHI) {
+                    selectHatcherInDoc(refHI);
+                }
+            }
+        };
+
+        // ══════════════════════════════════════════
+        // MODAL BROWSE
+        // ══════════════════════════════════════════
+
+        function openBrowseModal() {
+            const listContainer = document.getElementById('htiDocList');
+            listContainer.innerHTML = '';
+            
+            const list = JSON.parse(localStorage.getItem('hatcherIn_list') || '[]');
+            if (list.length === 0) {
+                listContainer.innerHTML = '<div class="p-4 text-center text-muted">Belum ada dokumen Hatcher In yang disimpan.</div>';
+            } else {
+                list.forEach(docNo => {
+                    const data = JSON.parse(localStorage.getItem('hatcherIn_' + docNo));
+                    listContainer.innerHTML += `
+                        <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                onclick="selectHatcherInDoc('${docNo}')">
+                            <div>
+                                <div class="fw-bold text-danger">${docNo}</div>
+                                <small class="text-muted">Ref. Setter: ${data.refSetterIn} | Plan: ${data.plans.length}</small>
+                            </div>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </button>
+                    `;
+                });
+            }
+            docModal.show();
+        }
+
+        function selectHatcherInDoc(docNo) {
+            const data = JSON.parse(localStorage.getItem('hatcherIn_' + docNo));
+            document.getElementById('refHatcherIn').value = docNo;
+            document.getElementById('lblDocNo').innerText = "HTO" + docNo.substring(3);
+            
+            // Set available plans from this doc
+            availableHatcherInPlans = data.plans;
+            docModal.hide();
+            
+            // Auto add all plans from the doc as default? 
+            // Or just reset the current selected plans?
+            if (selectedPlans.length > 0) {
+                if (confirm('Ubah Referensi? Baris plan yang ada saat ini akan dihapus.')) {
+                    document.getElementById('planList').innerHTML = '';
+                    selectedPlans = [];
+                    calculateGrandTotal();
+                }
+            }
+        }
+
+        function openPlanModal() {
+            const tbody = document.getElementById('modalPlanBody');
+            tbody.innerHTML = '';
+
+            if (availableHatcherInPlans.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="5" class="text-center text-muted py-4">
+                        <i class="bi bi-exclamation-circle me-2"></i>Pilih Dokumen Hatcher In terlebih dahulu.
+                    </td></tr>`;
+            } else {
+                const alreadyAdded = selectedPlans.map(p => p.planNo);
+                const filtered = availableHatcherInPlans.filter(p => !alreadyAdded.includes(p.planNo));
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `
+                        <tr><td colspan="5" class="text-center text-muted py-4">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>Semua plan sudah ditambahkan.
+                        </td></tr>`;
+                } else {
+                    filtered.forEach(p => {
+                        tbody.innerHTML += `
+                        <tr>
+                            <td class="ps-3 fw-bold font-monospace text-danger">${p.planNo}</td>
+                            <td class="small">${p.item}</td>
+                            <td><span class="badge bg-secondary">${p.machine}</span></td>
+                            <td class="text-center fw-bold text-primary">${p.qtyNet}</td>
+                            <td class="pe-3">
+                                <button class="btn btn-sm btn-ho-primary"
+                                    onclick="addPlanFromModal('${p.planNo}', '${p.item}', '${p.machine}', ${p.qtyNet})">
+                                    <i class="bi bi-plus-lg me-1"></i>Pilih
+                                </button>
+                            </td>
+                        </tr>`;
+                    });
+                }
+            }
+            planModal.show();
+        }
+
+        // ══════════════════════════════════════════
+        // TAMBAH PLAN
+        // ══════════════════════════════════════════
+
+        function addPlanFromModal(planNo, item, machine, qtyNet) {
+            planIdx++;
+            selectedPlans.push({ planNo, item, machine, qtyNet, idx: planIdx });
+            renderPlanCard({ planNo, item, machine, qtyNet, idx: planIdx, cullings: [], qtyDoc: 0 });
+            planModal.hide();
+            calculateGrandTotal();
+        }
+
+        function renderPlanCard(data) {
+            const { planNo, item, machine, qtyNet, idx, cullings, qtyDoc } = data;
+
+            let cullingRowsHtml = '';
+            if (cullings && cullings.length > 0) {
+                cullings.forEach((c, ci) => {
+                    cullingRowsHtml += buildCullingRow(idx, ci + 1, c.code, c.qty);
+                });
+                cullingRowCount[idx] = cullings.length;
+            }
+
+            const html = `
+            <div class="plan-card" id="pc-${idx}">
+                <div class="plan-card-header">
+                    <div>
+                        <span class="plan-id-badge">PLAN: ${planNo}</span>
+                        <span class="ms-2 badge bg-light text-dark border">${item}</span>
+                        <span class="ms-1 badge bg-secondary">${machine}</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger border-0 hide-on-view"
+                            onclick="removePlanCard(${idx}, '${planNo}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+
+                <div class="p-3">
+                    <!-- Metrics -->
+                    <div class="row g-2 mb-3">
+                        <div class="col">
+                            <div class="metric-box metric-in">
+                                <div class="metric-label">Qty Masuk</div>
+                                <div class="metric-value" id="mi-${idx}">${qtyNet}</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="metric-box metric-doc">
+                                <div class="metric-label">DOC Hidup</div>
+                                <div class="metric-value" id="mdoc-${idx}">0</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="metric-box metric-culling">
+                                <div class="metric-label">Total Culling</div>
+                                <div class="metric-value" id="mculling-${idx}">0</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="metric-box metric-hr">
+                                <div class="metric-label">Hatch Rate</div>
+                                <div class="metric-value" id="mhr-${idx}">—%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Fields -->
+                    <div class="row g-3 align-items-center mb-3">
+                        <div class="col-md-4">
+                            <label class="section-label d-block mb-1">Jumlah DOC Hidup (Ekor)</label>
+                            <input type="number" class="form-control fw-bold text-success"
+                                   id="docQty-${idx}" data-idx="${idx}" data-qtynet="${qtyNet}"
+                                   value="${qtyDoc}" min="0" max="${qtyNet}"
+                                   oninput="updatePlanMetrics(${idx})" placeholder="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="section-label d-block mb-1">No. Nampan / Tray Panen</label>
+                            <input type="text" class="form-control" id="trayNo-${idx}"
+                                   placeholder="Contoh: TRAY-A1, A2">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="section-label d-block mb-1">Waktu Panen</label>
+                            <input type="time" class="form-control" id="harvestTime-${idx}" value="07:00">
+                        </div>
+                    </div>
+
+                    <!-- Culling Table -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="section-label">Rincian Culling & Afkir</span>
+                        <button class="btn btn-sm btn-outline-danger hide-on-view"
+                                style="font-size:12px;" onclick="addCullingRow(${idx})">
+                            <i class="bi bi-plus-lg me-1"></i>Tambah
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered culling-table mb-0" id="cullingTable-${idx}">
+                            <thead>
+                                <tr>
+                                    <th width="5%" class="text-center">#</th>
+                                    <th width="60%">Jenis Afkir / Culling</th>
+                                    <th width="20%" class="text-center">Qty</th>
+                                    <th width="15%" class="text-center hide-on-view">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cullingBody-${idx}">
+                                ${cullingRowsHtml || `
+                                <tr id="emptyRow-${idx}">
+                                    <td colspan="4" class="text-center text-muted py-3" style="font-size:12px;">
+                                        <i class="bi bi-plus-circle me-1"></i>Belum ada data culling
+                                    </td>
+                                </tr>`}
+                            </tbody>
+                            <tfoot>
+                                <tr class="bg-light">
+                                    <td colspan="2" class="text-end fw-bold small">Total Culling + Tidak Menetas:</td>
+                                    <td class="text-center fw-bold text-danger" id="cullingTotal-${idx}">0</td>
+                                    <td class="hide-on-view"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="plan-summary-bar d-flex justify-content-between align-items-center">
+                    <span class="text-muted" style="font-size:12px;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Qty Masuk: <b>${qtyNet}</b>
+                    </span>
+                    <div class="d-flex gap-3" style="font-size:12px;">
+                        <span class="text-success">DOC Hidup: <b id="sumDoc-${idx}">0</b></span>
+                        <span class="text-danger">Culling: <b id="sumCulling-${idx}">0</b></span>
+                        <span class="text-warning">HR: <b id="sumHR-${idx}">—%</b></span>
+                    </div>
+                </div>
+                <!-- Progress bar visual -->
+                <div class="progress" style="height: 4px; border-radius: 0;">
+                    <div class="progress-bar bg-success" id="pb-${idx}" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>`;
+
+            document.getElementById('planList').insertAdjacentHTML('beforeend', html);
+
+            if (cullings && cullings.length > 0) {
+                setTimeout(() => updatePlanMetrics(idx), 60);
+            }
+        }
+
+        // ══════════════════════════════════════════
+        // CULLING ROWS
+        // ══════════════════════════════════════════
+
+        function addCullingRow(pIdx) {
+            if (!cullingRowCount[pIdx]) cullingRowCount[pIdx] = 0;
+            cullingRowCount[pIdx]++;
+            const rowNum = cullingRowCount[pIdx];
+
+            const emptyRow = document.getElementById(`emptyRow-${pIdx}`);
+            if (emptyRow) emptyRow.remove();
+
+            document.getElementById(`cullingBody-${pIdx}`)
+                .insertAdjacentHTML('beforeend', buildCullingRow(pIdx, rowNum));
+        }
+
+        function buildCullingRow(pIdx, rowNum, selectedCode = '', qty = 0) {
+            let options = '<option value="">-- Pilih Jenis --</option>';
+            cullingMaster.forEach(m => {
+                const sel = m.code === selectedCode ? 'selected' : '';
+                options += `<option value="${m.code}" ${sel}>${m.label}</option>`;
+            });
+
+            return `
+            <tr id="culrow-${pIdx}-${rowNum}">
+                <td class="text-center text-muted">${rowNum}</td>
+                <td>
+                    <select class="form-select form-select-sm culling-select"
+                            data-planidx="${pIdx}" onchange="updatePlanMetrics(${pIdx})">
+                        ${options}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm text-center culling-qty"
+                           data-planidx="${pIdx}" value="${qty}" min="0"
+                           oninput="updatePlanMetrics(${pIdx})">
+                </td>
+                <td class="text-center hide-on-view">
+                    <button class="btn btn-outline-danger btn-sm border-0"
+                            onclick="removeCullingRow('culrow-${pIdx}-${rowNum}', ${pIdx})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+        }
+
+        function removeCullingRow(rowId, pIdx) {
+            document.getElementById(rowId).remove();
+            updatePlanMetrics(pIdx);
+        }
+
+        // ══════════════════════════════════════════
+        // REMOVE PLAN
+        // ══════════════════════════════════════════
+
+        function removePlanCard(idx, planNo) {
+            document.getElementById(`pc-${idx}`).remove();
+            selectedPlans = selectedPlans.filter(p => p.idx !== idx);
+            calculateGrandTotal();
+        }
+
+        // ══════════════════════════════════════════
+        // KALKULASI
+        // ══════════════════════════════════════════
+
+        function updatePlanMetrics(idx) {
+            const qtyNet = parseInt(document.getElementById(`mi-${idx}`)?.innerText) || 0;
+            const qtyDoc = parseInt(document.getElementById(`docQty-${idx}`)?.value) || 0;
+
+            let totalCulling = 0;
+            document.querySelectorAll(`#cullingBody-${idx} .culling-qty`).forEach(el => {
+                totalCulling += parseInt(el.value) || 0;
+            });
+
+            const hr = qtyNet > 0 ? ((qtyDoc / qtyNet) * 100).toFixed(1) : 0;
+
+            document.getElementById(`mdoc-${idx}`).innerText = qtyDoc;
+            document.getElementById(`mculling-${idx}`).innerText = totalCulling;
+            document.getElementById(`cullingTotal-${idx}`).innerText = totalCulling;
+            document.getElementById(`mhr-${idx}`).innerText = hr + '%';
+            document.getElementById(`sumDoc-${idx}`).innerText = qtyDoc;
+            document.getElementById(`sumCulling-${idx}`).innerText = totalCulling;
+            document.getElementById(`sumHR-${idx}`).innerText = hr + '%';
+            
+            const pb = document.getElementById(`pb-${idx}`);
+            if (pb) {
+                pb.style.width = hr + '%';
+                pb.className = 'progress-bar ' + (hr > 85 ? 'bg-success' : (hr > 70 ? 'bg-warning' : 'bg-danger'));
+            }
+
+            calculateGrandTotal();
+        }
+
+        function calculateGrandTotal() {
+            let gIn = 0, gDoc = 0, gCulling = 0;
+
+            document.querySelectorAll('[id^="mi-"]').forEach(el => {
+                gIn += parseInt(el.innerText) || 0;
+            });
+            document.querySelectorAll('[id^="mdoc-"]').forEach(el => {
+                gDoc += parseInt(el.innerText) || 0;
+            });
+            document.querySelectorAll('[id^="mculling-"]').forEach(el => {
+                gCulling += parseInt(el.innerText) || 0;
+            });
+
+            const gHR = gIn > 0 ? ((gDoc / gIn) * 100).toFixed(1) : 0;
+
+            document.getElementById('gTotalIn').innerText = gIn.toLocaleString();
+            document.getElementById('gTotalDoc').innerText = gDoc.toLocaleString();
+            document.getElementById('gTotalCulling').innerText = gCulling.toLocaleString();
+            document.getElementById('gHatchRate').innerText = gHR + '%';
+        }
+
+        // ══════════════════════════════════════════
+        // LOCALSTORAGE
+        // ══════════════════════════════════════════
+
+        function getDraftPayload() {
+            const plans = [];
+            selectedPlans.forEach(p => {
+                const qtyDoc = parseInt(document.getElementById(`docQty-${p.idx}`)?.value) || 0;
+                const trayNo = document.getElementById(`trayNo-${p.idx}`)?.value || '';
+                const harvestTime = document.getElementById(`harvestTime-${p.idx}`)?.value || '';
+                const cullings = [];
+
+                document.querySelectorAll(`#cullingBody-${p.idx} tr`).forEach(row => {
+                    const sel = row.querySelector('.culling-select');
+                    const qty = row.querySelector('.culling-qty');
+                    if (sel && qty) cullings.push({ code: sel.value, qty: parseInt(qty.value) || 0 });
+                });
+
+                plans.push({ ...p, qtyDoc, trayNo, harvestTime, cullings });
+            });
+
+            return {
+                refHatcherIn: document.getElementById('refHatcherIn').value,
+                date: document.getElementById('inputDate').value,
+                whs: document.getElementById('selectWhs').value,
+                remarks: document.getElementById('inputRemarks').value,
+                plans
+            };
+        }
+
+        function loadDraft() {
+            const raw = localStorage.getItem(LS_KEY);
+            if (!raw) return;
+            try {
+                const draft = JSON.parse(raw);
+                document.getElementById('refHatcherIn').value = draft.refHatcherIn || '';
+                document.getElementById('inputDate').value = draft.date || '';
+                document.getElementById('selectWhs').value = draft.whs || '';
+                document.getElementById('inputRemarks').value = draft.remarks || '';
+
+                draft.plans.forEach(p => {
+                    planIdx = Math.max(planIdx, p.idx);
+                    selectedPlans.push({ planNo: p.planNo, item: p.item, machine: p.machine, qtyNet: p.qtyNet, idx: p.idx });
+                    renderPlanCard(p);
+                    setTimeout(() => {
+                        if (document.getElementById(`trayNo-${p.idx}`))
+                            document.getElementById(`trayNo-${p.idx}`).value = p.trayNo || '';
+                        if (document.getElementById(`harvestTime-${p.idx}`))
+                            document.getElementById(`harvestTime-${p.idx}`).value = p.harvestTime || '';
+                        if (document.getElementById(`docQty-${p.idx}`))
+                            document.getElementById(`docQty-${p.idx}`).value = p.qtyDoc || 0;
+                        updatePlanMetrics(p.idx);
+                    }, 60);
+                });
+            } catch (e) { console.warn('Draft load error:', e); }
+        }
+
+        // Auto-save
+        document.addEventListener('input', () => {
+            try { localStorage.setItem(LS_KEY, JSON.stringify(getDraftPayload())); } catch (e) { }
+        });
+
+        // ══════════════════════════════════════════
+        // VIEW MODE
+        // ══════════════════════════════════════════
+
+        function loadViewData(docNo) {
+            const raw = localStorage.getItem('hatcherOut_' + docNo) || localStorage.getItem(LS_KEY);
+            let data = null;
+            if (raw) { try { data = JSON.parse(raw); } catch (e) { } }
+
+            if (!data) {
+                data = {
+                    docNo: docNo || 'HTO26-009',
+                    refHatcherIn: 'HTI26-0001',
+                    date: '2026-03-25',
+                    whs: 'TNS-DOC',
+                    remarks: 'Cuaca cerah. Mesin berjalan normal. Panen selesai pukul 09.00.',
+                    plans: [
+                        {
+                            planNo: '240000040', item: 'TELUR BEBEK LOKAL AAC',
+                            machine: 'TNS-HAT05', qtyNet: 185, idx: 1,
+                            qtyDoc: 162, trayNo: 'TRAY-A1', harvestTime: '07:30',
+                            cullings: [
+                                { code: 'ST0165', qty: 8 },
+                                { code: 'ST0174', qty: 15 }
+                            ]
+                        },
+                        {
+                            planNo: '240000166', item: 'TELUR BEBEK PEKING SUPER',
+                            machine: 'TNS-HAT05', qtyNet: 193, idx: 2,
+                            qtyDoc: 170, trayNo: 'TRAY-B1', harvestTime: '08:00',
+                            cullings: [
+                                { code: 'ST0166', qty: 10 },
+                                { code: 'ST0174', qty: 13 }
+                            ]
+                        }
+                    ]
+                };
+            }
+
+            document.getElementById('lblDocNo').innerText = data.docNo || docNo || 'HTO26-009';
+            document.getElementById('inputDocNo').value = data.docNo || docNo || 'HTO26-009';
+            document.getElementById('refHatcherIn').value = data.refHatcherIn || '';
+            document.getElementById('inputDate').value = data.date || '';
+            document.getElementById('selectWhs').value = data.whs || '';
+            document.getElementById('inputRemarks').value = data.remarks || '';
+
+            data.plans.forEach(p => {
+                planIdx = Math.max(planIdx, p.idx);
+                renderPlanCard(p);
+                setTimeout(() => {
+                    ['trayNo', 'harvestTime', 'docQty'].forEach(field => {
+                        const el = document.getElementById(`${field === 'docQty' ? 'docQty' : field}-${p.idx}`);
+                        if (el) el.value = field === 'docQty' ? (p.qtyDoc || 0) : (p[field] || '');
+                    });
+                    updatePlanMetrics(p.idx);
+                }, 60);
+            });
+        }
+
+        // ══════════════════════════════════════════
+        // SAVE
+        // ══════════════════════════════════════════
+
+        function saveData() {
+            if (selectedPlans.length === 0) {
+                alert('Belum ada plan yang ditambahkan!');
+                return;
+            }
+            const payload = getDraftPayload();
+            payload.docNo = 'HTO26-009';
+            payload.savedAt = new Date().toISOString();
+            payload.status = 'POSTED';
+
+            localStorage.setItem('hatcherOut_' + payload.docNo, JSON.stringify(payload));
+            
+            // Add to list for index.html
+            let list = JSON.parse(localStorage.getItem('hatcherOut_list') || '[]');
+            if (!list.includes(payload.docNo)) {
+                list.push(payload.docNo);
+                localStorage.setItem('hatcherOut_list', JSON.stringify(list));
+            }
+
+            localStorage.removeItem(LS_KEY);
+
+            alert(`✅ Dokumen Hatcher Out berhasil disimpan!\nNo: ${payload.docNo}\nTotal DOC: ${document.getElementById('gTotalDoc').innerText} ekor`);
+            window.location.href = 'index.html';
+        }
+
+        function openBrowseModal() {
+            // Replaced by new implementation above
+        }
+    </script>
+</body>
+
+</html>

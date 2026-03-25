@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hatcher In - Transfer ke Mesin Tetas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --amber-core:   #fd7e14;
+            --amber-soft:   #fff3e0;
+            --amber-border: #ffc078;
+            --green-core:   #198754;
+            --green-soft:   #f0fff4;
+            --dark-navy:    #0f1f3d;
+            --mid-navy:     #1e3c72;
+            --card-bg:      #ffffff;
+            --page-bg:      #f0f2f5;
+            --text-muted-c: #6c757d;
+            --border-color: #dee2e6;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--page-bg);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+        }
+
+        /* ─── HEADER ─────────────────────────────── */
+        .app-header {
+            background: var(--dark-navy);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-phase-tag {
+            background: var(--amber-core);
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        /* ─── CARDS ──────────────────────────────── */
+        .form-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+        }
+
+        .section-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted-c);
+        }
+
+        /* ─── HEADER STRIPE (amber khas HI) ──────── */
+        .hi-header-stripe {
+            background: linear-gradient(135deg, var(--dark-navy) 0%, #7d4e00 100%);
+            padding: 16px 20px;
+            color: white;
+        }
+
+        /* ─── PLAN CARD ───────────────────────────── */
+        .plan-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+            animation: slideIn 0.25s ease;
+        }
+
+        .plan-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+        .plan-card-header {
+            background: var(--amber-soft);
+            border-bottom: 2px solid var(--amber-core);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .plan-id-badge {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--amber-core);
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── GRAND SUMMARY ───────────────────────── */
+        .grand-summary {
+            background: linear-gradient(135deg, var(--dark-navy), #3d2a00);
+            color: white;
+            border-radius: 10px;
+            padding: 20px 24px;
+        }
+
+        .grand-metric .gm-label {
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            opacity: 0.6;
+            margin-bottom: 2px;
+        }
+
+        .grand-metric .gm-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .divider-v {
+            width: 1px;
+            background: rgba(255,255,255,0.15);
+            margin: 0 8px;
+        }
+
+        /* ─── READONLY MODE ───────────────────────── */
+        .mode-view input, .mode-view select, .mode-view textarea {
+            background-color: #f8f9fa !important;
+            pointer-events: none;
+            border-color: #e9ecef;
+        }
+        .mode-view .hide-on-view { display: none !important; }
+
+        /* ─── MISC ────────────────────────────────── */
+        .bg-readonly { background-color: #e9ecef !important; }
+
+        .btn-hi-primary {
+            background: var(--amber-core);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        .btn-hi-primary:hover { background: #c96a0c; color: white; }
+
+        /* Transfer arrow visual */
+        .transfer-arrow {
+            background: #fff3e0;
+            border: 1px dashed var(--amber-border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .status-pill {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+
+<body id="mainBody">
+
+    <!-- ═══════════════════════════════════════════════
+         HEADER
+    ═══════════════════════════════════════════════ -->
+    <div class="app-header px-4 py-3 d-flex align-items-center mb-4">
+        <a href="index.html" class="btn btn-outline-light btn-sm me-3">
+            <i class="bi bi-arrow-left"></i> Kembali
+        </a>
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <span class="header-phase-tag">PHASE 3</span>
+            <h5 class="mb-0 fw-bold" id="titlePage">Hatcher In — Transfer ke Mesin Tetas</h5>
+            <span id="badgeView" class="badge bg-warning text-dark ms-2 d-none">
+                <i class="bi bi-eye me-1"></i>READ ONLY
+            </span>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+
+        <!-- ═══════════════════════════════════════════
+             HEADER DOKUMEN
+        ═══════════════════════════════════════════ -->
+        <div class="form-card">
+            <div class="hi-header-stripe d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="section-label opacity-75 mb-1" style="color:#ffd8a8;">Dokumen Transfer</div>
+                    <h5 class="mb-0 fw-bold font-monospace" id="lblDocNo">HTI26-— —</h5>
+                </div>
+                <div class="text-end">
+                    <div class="section-label opacity-75 mb-1" style="color:#ffd8a8;">Status</div>
+                    <span class="status-pill bg-warning text-dark" id="statusPill">DRAFT</span>
+                </div>
+            </div>
+
+            <div class="p-4">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">No. Hatcher In</label>
+                        <input type="text" class="form-control fw-bold bg-readonly font-monospace" id="docNo" readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Ref. Setter In</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control bg-readonly font-monospace" id="refSetterIn" placeholder="Pilih dari Browse..." readonly>
+                            <button class="btn btn-outline-warning hide-on-view" onclick="openSetterInModal()" title="Browse Setter In">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Tanggal Masuk Hatcher</label>
+                        <input type="date" class="form-control" id="docDate">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="section-label d-block mb-1">Warehouse Tujuan</label>
+                        <select class="form-select" id="selectWhs">
+                            <option value="TNS-HATCHERY" selected>TNS-HATCHERY (Tunas)</option>
+                            <option value="SWH-HATCHERY">SWH-HATCHERY (Sawah)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             LIST PLAN
+        ═══════════════════════════════════════════ -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h6 class="fw-bold mb-0">Rincian Plan Transfer ke Hatcher</h6>
+                <small class="text-muted">Pilih Plan dari Setter Out yang sudah selesai Candling, lalu tentukan mesin Hatcher tujuan.</small>
+            </div>
+            <button class="btn btn-hi-primary btn-sm hide-on-view" id="btnAddPlan" onclick="openPlanModal()">
+                <i class="bi bi-plus-lg me-1"></i>Tambah Plan
+            </button>
+        </div>
+
+        <div id="planList"></div>
+
+        <!-- ═══════════════════════════════════════════
+             GRAND SUMMARY
+        ═══════════════════════════════════════════ -->
+        <div class="grand-summary mb-4">
+            <div class="row text-center g-0">
+                <div class="col grand-metric">
+                    <div class="gm-label">Total Plan</div>
+                    <div class="gm-value" id="gTotalPlan">0</div>
+                </div>
+                <div class="divider-v d-none d-md-block"></div>
+                <div class="col grand-metric">
+                    <div class="gm-label" style="color:#ffd8a8;">Total Qty Net</div>
+                    <div class="gm-value" id="gTotalQty" style="color:#ffc078;">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             CATATAN & ACTIONS
+        ═══════════════════════════════════════════ -->
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="form-card p-3 mb-0">
+                    <label class="section-label d-block mb-2">Catatan Transfer</label>
+                    <textarea class="form-control" id="inputRemarks" rows="3"
+                        placeholder="Catatan kondisi telur, mesin, atau hal khusus saat transfer ke hatcher..."></textarea>
+                </div>
+            </div>
+            <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                <a href="index.html" class="btn btn-light border px-4">Batal</a>
+                <button class="btn btn-hi-primary px-5 hide-on-view" onclick="saveData()">
+                    <i class="bi bi-floppy me-2"></i>Simpan Hatcher In
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         MODAL: Browse Setter In
+    ═══════════════════════════════════════════════ -->
+    <div class="modal fade" id="modalSetterIn" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header" style="background:var(--dark-navy); color:white;">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-text me-2 text-warning"></i>
+                        Pilih Dokumen Setter In
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="list-group list-group-flush" id="setterInDocList">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         MODAL: Browse Plan dari Setter Out
+    ═══════════════════════════════════════════════ -->
+    <div class="modal fade" id="modalPlan" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header" style="background:var(--dark-navy); color:white;">
+                    <h5 class="modal-title">
+                        <i class="bi bi-arrow-right-circle me-2 text-warning"></i>
+                        Pilih Plan — Siap Transfer ke Hatcher
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="p-3 bg-light border-bottom">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Menampilkan Plan dari Setter Out yang sudah selesai Candling dan siap ditransfer ke mesin Hatcher.
+                        </small>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3" style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Plan No</th>
+                                    <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Item</th>
+                                    <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Mesin Setter</th>
+                                    <th class="text-center" style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Qty Net</th>
+                                    <th style="background:#f8f9fa;font-size:11px;text-transform:uppercase;color:#888;">Ref. SO</th>
+                                    <th style="background:#f8f9fa;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalPlanBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ══════════════════════════════════════════
+        // STATE
+        // ══════════════════════════════════════════
+        let currentMode   = 'new';
+        let selectedPlans = [];     // { idx, planNo, item, machine, qtyNet, refSO }
+        let planIdx       = 0;
+        let availableSIPlans = [];  // plans from setter out filtered by SI ref
+
+        const siModal   = new bootstrap.Modal(document.getElementById('modalSetterIn'), {});
+        const planModal = new bootstrap.Modal(document.getElementById('modalPlan'), {});
+
+        // ══════════════════════════════════════════
+        // INIT
+        // ══════════════════════════════════════════
+        window.onload = () => {
+            const urlParams    = new URLSearchParams(window.location.search);
+            currentMode        = urlParams.get('mode') || 'new';
+            const docParam     = urlParams.get('doc');
+            const parentSIDoc  = urlParams.get('parentDoc');   // from dashboard
+
+            if (currentMode === 'view') {
+                document.getElementById('mainBody').classList.add('mode-view');
+                document.getElementById('badgeView').classList.remove('d-none');
+                document.getElementById('titlePage').innerText = "Detail Hatcher In";
+                document.getElementById('statusPill').textContent = 'POSTED';
+                document.getElementById('statusPill').className  = 'status-pill bg-success text-white';
+
+                const data = JSON.parse(localStorage.getItem('hatcherIn_' + docParam));
+                if (data) renderSavedData(data);
+            } else {
+                const docNo = "HTI" + Math.floor(Math.random() * 100000);
+                document.getElementById('docNo').value    = docNo;
+                document.getElementById('lblDocNo').innerText = docNo;
+                document.getElementById('docDate').value  = new Date().toISOString().split('T')[0];
+
+                // If dashboard passed a Setter In reference, pre-fill and load plans
+                if (parentSIDoc) {
+                    document.getElementById('refSetterIn').value = parentSIDoc;
+                    loadAvailablePlansFromSI(parentSIDoc);
+                }
+            }
+        };
+
+        // ══════════════════════════════════════════
+        // BUILD AVAILABLE PLAN LIST FROM SETTER OUT
+        // (Membaca semua SO yang refIn = siDocNo)
+        // ══════════════════════════════════════════
+        function loadAvailablePlansFromSI(siDocNo) {
+            availableSIPlans = [];
+            const soList = JSON.parse(localStorage.getItem('setterOut_list') || '[]');
+
+            soList.forEach(soDocNo => {
+                const soData = JSON.parse(localStorage.getItem('setterOut_' + soDocNo));
+                if (!soData || soData.refIn !== siDocNo) return;
+
+                soData.plans.forEach(plan => {
+                    const totalAfkir = (plan.stats || []).reduce((s, st) => s + st.qty, 0);
+                    const qtyNet = plan.qtyTarik - totalAfkir;
+                    availableSIPlans.push({
+                        planNo:  plan.planId || plan.planNo,
+                        item:    plan.itemName || plan.item || '-',
+                        machine: plan.machine,
+                        qtyNet:  qtyNet,
+                        refSO:   soDocNo
+                    });
+                });
+            });
+        }
+
+        // ══════════════════════════════════════════
+        // MODAL: BROWSE SETTER IN DOC
+        // ══════════════════════════════════════════
+        function openSetterInModal() {
+            const listEl = document.getElementById('setterInDocList');
+            listEl.innerHTML = '';
+
+            const siList = JSON.parse(localStorage.getItem('setterIn_list') || '[]');
+            if (siList.length === 0) {
+                listEl.innerHTML = '<div class="p-4 text-center text-muted">Belum ada dokumen Setter In yang disimpan.</div>';
+            } else {
+                siList.forEach(docNo => {
+                    const data = JSON.parse(localStorage.getItem('setterIn_' + docNo));
+                    const planCount = data?.plans?.length || 0;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                    btn.innerHTML = `
+                        <div>
+                            <div class="fw-bold text-warning font-monospace">${docNo}</div>
+                            <small class="text-muted">Tanggal: ${data?.date || '-'} | Plan: ${planCount}</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    `;
+                    btn.onclick = () => selectSetterInDoc(docNo);
+                    listEl.appendChild(btn);
+                });
+            }
+            siModal.show();
+        }
+
+        function selectSetterInDoc(siDocNo) {
+            document.getElementById('refSetterIn').value = siDocNo;
+
+            if (selectedPlans.length > 0) {
+                if (confirm('Ubah Referensi Setter In? Plan yang sudah dipilih akan dihapus.')) {
+                    document.getElementById('planList').innerHTML = '';
+                    selectedPlans = [];
+                    updateSummary();
+                } else {
+                    siModal.hide();
+                    return;
+                }
+            }
+
+            loadAvailablePlansFromSI(siDocNo);
+            siModal.hide();
+        }
+
+        // ══════════════════════════════════════════
+        // MODAL: BROWSE PLAN (dari Setter Out)
+        // ══════════════════════════════════════════
+        function openPlanModal() {
+            if (!document.getElementById('refSetterIn').value) {
+                alert("Pilih Referensi Setter In terlebih dahulu.");
+                return;
+            }
+
+            const tbody = document.getElementById('modalPlanBody');
+            tbody.innerHTML = '';
+
+            const alreadyAdded = selectedPlans.map(p => p.planNo);
+            const filtered = availableSIPlans.filter(p => !alreadyAdded.includes(p.planNo));
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="6" class="text-center text-muted py-4">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Semua plan sudah ditambahkan atau belum ada Setter Out yang selesai.
+                    </td></tr>`;
+            } else {
+                filtered.forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="ps-3 fw-bold font-monospace text-warning">${p.planNo}</td>
+                        <td class="small">${p.item}</td>
+                        <td><span class="badge bg-secondary">${p.machine}</span></td>
+                        <td class="text-center fw-bold text-success font-monospace">${p.qtyNet}</td>
+                        <td><span class="badge bg-light text-dark border">${p.refSO}</span></td>
+                        <td class="pe-3 text-end">
+                            <button class="btn btn-sm btn-hi-primary">
+                                <i class="bi bi-plus-lg me-1"></i>Pilih
+                            </button>
+                        </td>
+                    `;
+                    tr.querySelector('button').onclick = () => addPlan(p.planNo, p.item, p.machine, p.qtyNet, p.refSO);
+                    tbody.appendChild(tr);
+                });
+            }
+            planModal.show();
+        }
+
+        // ══════════════════════════════════════════
+        // ADD PLAN CARD
+        // ══════════════════════════════════════════
+        function addPlan(planNo, item, machine, qtyNet, refSO) {
+            planIdx++;
+            const idx = planIdx;
+            selectedPlans.push({ idx, planNo, item, machine, qtyNet, refSO });
+
+            const container = document.getElementById('planList');
+            container.insertAdjacentHTML('beforeend', `
+            <div class="plan-card" id="card-${idx}">
+                <div class="plan-card-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="plan-id-badge">PLAN: ${planNo}</span>
+                        <span class="text-muted">|</span>
+                        <span class="small fw-semibold text-uppercase text-muted">${item}</span>
+                        <span class="badge bg-secondary ms-1">${machine}</span>
+                        <span class="badge bg-light text-dark border ms-1 small">Ref: ${refSO}</span>
+                    </div>
+                    <button id="btnRemove-${idx}" class="btn btn-sm btn-outline-danger border-0 hide-on-view">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <div class="p-4">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-3">
+                            <label class="section-label d-block mb-1">Qty Net (Dari Candling)</label>
+                            <input type="number" class="form-control fw-bold bg-readonly font-monospace text-success hatch-qty"
+                                id="qty-${idx}" value="${qtyNet}" readonly>
+                        </div>
+                        <div class="col-md-1 text-center hide-on-view">
+                            <i class="bi bi-arrow-right fs-3 text-warning opacity-75"></i>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="section-label d-block mb-1">Tujuan Mesin Hatcher</label>
+                            <select class="form-select fw-bold border-warning hatch-machine" id="mcn-${idx}">
+                                <option value="">-- Pilih Mesin --</option>
+                                <option value="TNS-HAT01">TNS-HAT01</option>
+                                <option value="TNS-HAT02">TNS-HAT02</option>
+                                <option value="TNS-HAT03">TNS-HAT03</option>
+                                <option value="TNS-HAT04">TNS-HAT04</option>
+                                <option value="TNS-HAT05">TNS-HAT05</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="section-label d-block mb-1">No. Keranjang / Posisi</label>
+                            <input type="text" class="form-control hatch-tray" id="tray-${idx}"
+                                placeholder="Contoh: Row A - Level 1">
+                        </div>
+                    </div>
+                </div>
+            </div>`);
+
+            document.getElementById(`btnRemove-${idx}`).onclick = () => removePlan(idx);
+
+            planModal.hide();
+            updateSummary();
+        }
+
+        function removePlan(idx) {
+            document.getElementById('card-' + idx).remove();
+            selectedPlans = selectedPlans.filter(p => p.idx !== idx);
+            updateSummary();
+        }
+
+        // ══════════════════════════════════════════
+        // SUMMARY
+        // ══════════════════════════════════════════
+        function updateSummary() {
+            let totalQty = 0;
+            document.querySelectorAll('.hatch-qty').forEach(el => totalQty += parseInt(el.value) || 0);
+
+            document.getElementById('gTotalPlan').innerText = selectedPlans.length;
+            document.getElementById('gTotalQty').innerText  = totalQty.toLocaleString();
+        }
+
+        // ══════════════════════════════════════════
+        // RENDER VIEW MODE
+        // ══════════════════════════════════════════
+        function renderSavedData(data) {
+            document.getElementById('docNo').value          = data.docNo;
+            document.getElementById('lblDocNo').innerText   = data.docNo;
+            document.getElementById('refSetterIn').value    = data.refSetterIn;
+            document.getElementById('docDate').value        = data.date;
+            document.getElementById('selectWhs').value      = data.whs || '';
+            document.getElementById('inputRemarks').value   = data.remarks || '';
+
+            const container = document.getElementById('planList');
+            let totalQty = 0;
+
+            (data.plans || []).forEach(plan => {
+                totalQty += plan.qtyNet;
+                container.insertAdjacentHTML('beforeend', `
+                <div class="plan-card">
+                    <div class="plan-card-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="plan-id-badge">PLAN: ${plan.planNo}</span>
+                            <span class="text-muted">|</span>
+                            <span class="small fw-semibold text-uppercase text-muted">${plan.item || '-'}</span>
+                            <span class="badge bg-secondary ms-1">${plan.machine || '-'}</span>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="section-label d-block mb-1">Qty Net</label>
+                                <input type="number" class="form-control fw-bold font-monospace text-success" value="${plan.qtyNet}" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="section-label d-block mb-1">Mesin Hatcher</label>
+                                <input type="text" class="form-control fw-bold border-warning" value="${plan.hatcherMachine || '-'}" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="section-label d-block mb-1">No. Keranjang / Posisi</label>
+                                <input type="text" class="form-control" value="${plan.trayNo || '-'}" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>`);
+            });
+
+            document.getElementById('gTotalPlan').innerText = (data.plans || []).length;
+            document.getElementById('gTotalQty').innerText  = totalQty.toLocaleString();
+        }
+
+        // ══════════════════════════════════════════
+        // SAVE
+        // ══════════════════════════════════════════
+        function saveData() {
+            if (selectedPlans.length === 0) {
+                alert("Tambahkan minimal 1 Plan terlebih dahulu!");
+                return;
+            }
+
+            const plans = selectedPlans.map(p => ({
+                planNo:         p.planNo,
+                item:           p.item,
+                machine:        p.machine,         // mesin setter asal
+                qtyNet:         parseInt(document.getElementById('qty-' + p.idx).value) || p.qtyNet,
+                hatcherMachine: document.getElementById('mcn-' + p.idx).value,
+                trayNo:         document.getElementById('tray-' + p.idx).value,
+            }));
+
+            const payload = {
+                docNo:       document.getElementById('docNo').value,
+                refSetterIn: document.getElementById('refSetterIn').value,
+                date:        document.getElementById('docDate').value,
+                whs:         document.getElementById('selectWhs').value,
+                remarks:     document.getElementById('inputRemarks').value,
+                plans:       plans
+            };
+
+            localStorage.setItem('hatcherIn_' + payload.docNo, JSON.stringify(payload));
+
+            let list = JSON.parse(localStorage.getItem('hatcherIn_list') || '[]');
+            if (!list.includes(payload.docNo)) {
+                list.push(payload.docNo);
+                localStorage.setItem('hatcherIn_list', JSON.stringify(list));
+            }
+
+            alert('✅ Dokumen Hatcher In berhasil disimpan!');
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail QC & Statistic - Hatchery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .app-header {
+            background-color: #1e3c72;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border: 1px solid #dee2e6;
+        }
+
+        .table-qc th {
+            background-color: #f8f9fa;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* State saat Readonly (View Mode) */
+        .mode-view input,
+        .mode-view select {
+            background-color: #e9ecef !important;
+            pointer-events: none;
+        }
+
+        .mode-view .hide-on-view {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body id="mainBody">
+
+    <div class="app-header px-4 py-3 d-flex align-items-center mb-4">
+        <a href="index.html" class="btn btn-outline-light btn-sm me-3"><i class="bi bi-arrow-left"></i> Kembali</a>
+        <h4 class="mb-0" id="pageTitle">Input Data QC</h4>
+    </div>
+
+    <div class="container-fluid px-4">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-card p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <h6 class="fw-bold text-primary mb-0">Informasi Dokumen</h6>
+                        <span id="viewModeBadge" class="badge bg-secondary hide-on-view" style="display: none;">Mode
+                            Lihat</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">No. Dokumen Referensi</small>
+                        <strong class="fs-5" id="lblDocNo">-</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Plan No.</small>
+                        <strong id="lblPlanNo">240000040</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Fase</small>
+                        <span class="badge" id="lblPhaseBadge">Unknown</span>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-2">
+                        <label class="form-label text-muted small fw-bold">Suhu Ruang/Mesin (°C)</label>
+                        <input type="number" class="form-control" id="inputSuhu" value="37.0" step="0.1">
+                    </div>
+                    <div>
+                        <label class="form-label text-muted small fw-bold">Humidity (RH)</label>
+                        <input type="number" class="form-control" id="inputRH" value="71.0" step="0.1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="form-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">Rincian Afkir / Statistic Details</h5>
+                        <button class="btn btn-primary btn-sm hide-on-view" id="btnAddRow" onclick="addRow()"><i
+                                class="bi bi-plus-lg"></i> Tambah Baris</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover table-qc align-middle" id="qcTable">
+                            <thead>
+                                <tr>
+                                    <th width="5%" class="text-center">#</th>
+                                    <th width="35%">Statistic Code (Alasan)</th>
+                                    <th width="40%">Item Name (Hasil)</th>
+                                    <th width="15%" class="text-center">Quantity</th>
+                                    <th width="5%" class="text-center hide-on-view" id="thAksi">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="qcTableBody">
+                            </tbody>
+                            <tfoot>
+                                <tr class="bg-light">
+                                    <td colspan="3" class="text-end fw-bold">Total Qty Afkir:</td>
+                                    <td class="text-center fw-bold text-danger fs-5" id="totalQty">0</td>
+                                    <td class="hide-on-view"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="index.html" class="btn btn-light border px-4" id="btnCancel">Batal</a>
+                        <button class="btn btn-success px-5 hide-on-view" id="btnSave" onclick="saveData()"><i
+                                class="bi bi-floppy me-2"></i>Simpan Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ambil Parameter dari URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const docNo = urlParams.get('doc') || 'UNKNOWN-DOC';
+        const phaseType = urlParams.get('type');
+        const isViewMode = urlParams.get('mode') === 'view'; // Cek apakah mode view
+
+        // Data Master (Simulasi)
+        const masterCandling = [
+            { code: "ST0161", name: "CANDLING - BUSUK", item: "TELUR SORTIR BEBEK LOKAL" },
+            { code: "ST0160", name: "CANDLING - EED (EARLY EMBRIO DEAD)", item: "TELUR SORTIR BEBEK LOKAL" }
+        ];
+
+        const masterCulling = [
+            { code: "ST0165", name: "AFTER HATCH - CULLING DOD KERING", item: "DOD PEDAGING UNGGUL 888" },
+            { code: "ST0166", name: "AFTER HATCH - CULLING DOD CACAT", item: "DOD PEDAGING UNGGUL 888" },
+            { code: "ST0174", name: "AFTER HATCH - TELUR TIDAK MENETAS", item: "DOD PEDAGING UNGGUL 888" }
+        ];
+
+        let currentMaster = [];
+
+        // Inisialisasi Halaman
+        window.onload = () => {
+            document.getElementById('lblDocNo').innerText = docNo;
+
+            // Set Label Fase
+            if (phaseType === 'setter') {
+                document.getElementById('pageTitle').innerText = isViewMode ? "Detail Candling (Setter Out)" : "Input Candling (Setter Out)";
+                const badge = document.getElementById('lblPhaseBadge');
+                badge.innerText = "Setter Out";
+                badge.className = "badge bg-success";
+                currentMaster = masterCandling;
+            } else if (phaseType === 'hatcher') {
+                document.getElementById('pageTitle').innerText = isViewMode ? "Detail Culling (Hatcher Out)" : "Input Culling (Hatcher Out)";
+                const badge = document.getElementById('lblPhaseBadge');
+                badge.innerText = "Hatcher Out";
+                badge.className = "badge bg-danger";
+                currentMaster = masterCulling;
+            }
+
+            // Terapkan View Mode Logic
+            if (isViewMode) {
+                document.getElementById('mainBody').classList.add('mode-view');
+                document.getElementById('viewModeBadge').style.display = 'inline-block';
+                document.getElementById('btnCancel').innerText = "Kembali ke Dashboard";
+                document.getElementById('btnCancel').classList.replace('btn-light', 'btn-primary');
+
+                // Tambah dummy data khusus untuk simulasi mode view
+                addDummyViewData();
+            } else {
+                addRow(); // Kalau mode input, kasih 1 baris kosong
+            }
+        }
+
+        let rowCount = 0;
+
+        // Fungsi nambah baris untuk Input Mode
+        function addRow() {
+            rowCount++;
+            const tbody = document.getElementById('qcTableBody');
+            const tr = document.createElement('tr');
+            tr.id = `row-${rowCount}`;
+
+            let optionsHtml = '<option value="">-- Pilih Statistic --</option>';
+            currentMaster.forEach(opt => {
+                optionsHtml += `<option value="${opt.item}">${opt.name} (${opt.code})</option>`;
+            });
+
+            tr.innerHTML = `
+            <td class="text-center align-middle">${rowCount}</td>
+            <td>
+                <select class="form-select form-select-sm" onchange="updateItemName(this, 'item-${rowCount}')">
+                    ${optionsHtml}
+                </select>
+            </td>
+            <td><input type="text" class="form-control form-control-sm bg-light" id="item-${rowCount}" readonly placeholder="..."></td>
+            <td><input type="number" class="form-control form-control-sm text-center qty-input" value="0" min="0" onkeyup="calculateTotal()" onchange="calculateTotal()"></td>
+            <td class="text-center hide-on-view">
+                <button class="btn btn-outline-danger btn-sm border-0" onclick="removeRow('${tr.id}')"><i class="bi bi-trash"></i></button>
+            </td>
+        `;
+            tbody.appendChild(tr);
+        }
+
+        // Fungsi simulasi data kalo lagi mode View
+        function addDummyViewData() {
+            const tbody = document.getElementById('qcTableBody');
+            const dataSimulasi = currentMaster.slice(0, 2); // Ambil 2 data aja buat contoh
+
+            dataSimulasi.forEach((data, index) => {
+                rowCount++;
+                const tr = document.createElement('tr');
+
+                tr.innerHTML = `
+                <td class="text-center align-middle">${rowCount}</td>
+                <td>
+                    <select class="form-select form-select-sm" disabled>
+                        <option selected>${data.name} (${data.code})</option>
+                    </select>
+                </td>
+                <td><input type="text" class="form-control form-control-sm" value="${data.item}" disabled></td>
+                <td><input type="number" class="form-control form-control-sm text-center qty-input" value="${(index + 1) * 5}" disabled></td>
+                <td class="hide-on-view"></td>
+            `;
+                tbody.appendChild(tr);
+            });
+            calculateTotal();
+        }
+
+        function removeRow(rowId) {
+            document.getElementById(rowId).remove();
+            calculateTotal();
+        }
+
+        function updateItemName(selectElem, itemInputId) {
+            document.getElementById(itemInputId).value = selectElem.value;
+        }
+
+        function calculateTotal() {
+            const inputs = document.querySelectorAll('.qty-input');
+            let total = 0;
+            inputs.forEach(input => {
+                total += (parseInt(input.value) || 0);
+            });
+            document.getElementById('totalQty').innerText = total;
+        }
+
+        function saveData() {
+            alert('Mengirim JSON payload ke SAP B1 Service Layer...\nDokumen: ' + docNo);
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+
+</html>
